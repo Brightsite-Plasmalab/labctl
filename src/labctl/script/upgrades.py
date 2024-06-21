@@ -44,8 +44,8 @@ class ScriptInfo(ScriptBase):
         return self
 
 
-class DeviceCommands(DeviceBase):
-    current_channel: int = 0
+class DeviceCommands(ScriptBase):
+    current_channel: int = -1
     devices: dict[DeviceBase, int] = {}
 
     def register_device(self, device, channel):

@@ -1,4 +1,3 @@
-from labctl.script.base import ScriptBase
 from labctl.script.upgrades import DeviceCommands, MetaCommands, ScriptInfo
 
 
