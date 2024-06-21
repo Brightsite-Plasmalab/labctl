@@ -4,8 +4,13 @@ A simple experiment automation library for devices with serial communication.
 ## Installation
 1. Clone this repo using your Git Client of choice (e.g. Sourcetree or Git Kraken), or run the following command in your commandline interpreter:<br/>
 `git clone git@github.com:Brightsite-Plasmalab/labctl.git`
+1. (Optional) open the folder in your code editor of choice (VS Code, Spyder, PyCharm, ...)
+1. For Anaconda users:
+   - Open an Anaconda Prompt
+   - Optional: if you use an environment other than `base`, open it using `conda activate [my environment]`
+   - Install pip using `conda install pip`
 1. (Optional) to install this module in a virtual environment, [activate it](https://docs.python.org/3/library/venv.html#how-venvs-work).
-1. Install the module using `pip install -e [path_to_ramlab]`, replacing `[path_to_ramlab]` with the git repo directory.
+1. Install the module using `pip install -e [path_to_labctl]`, replacing `[path_to_labctl]` with the git repo directory.
 
 ## Graphical User Interface (GUI)
 
