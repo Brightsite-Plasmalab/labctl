@@ -1,0 +1,2 @@
+class DeviceBase:
+    pass

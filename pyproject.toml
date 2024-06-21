@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bitdemo"
+version = '0.0.1alpha1'
+requires-python = ">=3.8"
+dependencies = [
+    "PySimpleGUI"
+]
+
+authors = [
+    {name = "Martijn Ruijzendaal", email = "martijn.ruijzendaal@gmail.com"}
+]
+
+[project.urls]
+homepage = "https://codeberg.org/buhtz/bit_demo"
+documentation = "https://somewhere"
+repository = "https://codeberg.org/buhtz/bit_demo"
+changelog = "https://codeberg.org/buhtz/bit_demo/CHANGELOG.md"
+
+[tool.setuptools.package-dir]
+labctl = "src/labctl"
+labctlui = "src/labctl-ui"
