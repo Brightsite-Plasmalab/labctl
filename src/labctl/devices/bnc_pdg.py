@@ -1,11 +1,8 @@
 from __future__ import annotations
-from labctl.devices.impl import DeviceCmds
+from labctl.devices.base import DeviceBase
 
 
-class BncPdgCmds(DeviceCmds):
-    def __init__(self, parent):
-        DeviceCmds.__init__(self, parent)
-
+class BncPdgCmds(DeviceBase):
     def delay(self, channel, delay) -> BncPdgCmds:
         self.append(f":PULS{channel:d}:DELAY {delay:.10f}")
         return self

@@ -1,13 +1,10 @@
 from __future__ import annotations
-from labctl.devices.impl import DeviceCmds
-from labctl.script.commands import Cmds
+from labctl.devices.base import DeviceBase
+from labctl.script.base import ScriptBase
 
 
-class PiTranslationStage(DeviceCmds):
+class PiTranslationStage(DeviceBase):
     x_current: float
-
-    def __init__(self, parent):
-        DeviceCmds.__init__(self, parent)
 
     def stop(self) -> PiTranslationStage:
         """Stop motion of all axes immediately"""
@@ -65,7 +62,7 @@ class PiTranslationStage(DeviceCmds):
 
 
 if __name__ == "__main__":
-    cmds = Cmds()
+    cmds = ScriptBase()
     translation_stage = PiTranslationStage(cmds)
     cmds.register_device(translation_stage, 1)
     translation_stage.stop()

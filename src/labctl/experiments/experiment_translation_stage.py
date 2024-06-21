@@ -1,6 +1,6 @@
 from typing import List
 from labctl.devices import PiTranslationStage
-from labctl.devices import Cmds
+from labctl.script import Script
 from labctl.experiments.base_camera_experiment import BaseCameraExperiment
 
 
@@ -23,7 +23,7 @@ class TranslationStageExperiment(BaseCameraExperiment):
 
         return cmds
 
-    def prepare_experiment(self, cmds: Cmds):
+    def prepare_experiment(self, cmds: Script):
         super().prepare_experiment(cmds)
 
         self.translationstage.stop()

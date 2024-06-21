@@ -1,12 +1,8 @@
 from __future__ import annotations
-from labctl.devices.impl import DeviceCmds
-from labctl.script.commands import Cmds
+from labctl.devices.base import DeviceBase
 
 
-class ThorlabsStageCmds(DeviceCmds):
-    def __init__(self, parent):
-        DeviceCmds.__init__(self, parent)
-
+class ThorlabsStageCmds(DeviceBase):
     def home(self) -> ThorlabsStageCmds:
         # Home twice...
         for i in range(2):

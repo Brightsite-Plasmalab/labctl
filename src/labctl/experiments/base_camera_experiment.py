@@ -1,8 +1,8 @@
 import math
 from typing import List, cast
 import numpy as np
-from labctl.script.commands import Cmds
-from labctl.devices import ThorlabsStageCmds, BncPdgCmds
+from labctl.script import Script
+from labctl.devices import BncPdgCmds
 from labctl.experiments.experiment import Experiment
 from abc import abstractmethod
 
@@ -33,9 +33,9 @@ class BaseCameraExperiment(Experiment):
         """Get the human-readable names of the configurations."""
         pass
 
-    def make_labctl_header(self) -> Cmds:
+    def make_labctl_header(self) -> Script:
         """Make the labctl header for the experiment. Inherit this method to add more devices."""
-        cmds = Cmds(title=self.short_explanation, author=self.author)
+        cmds = Script(title=self.short_explanation, author=self.author)
         cmds.header_info()
 
         pdg = BncPdgCmds(cmds)
@@ -44,7 +44,7 @@ class BaseCameraExperiment(Experiment):
 
         return cmds
 
-    def prepare_experiment(self, cmds: Cmds):
+    def prepare_experiment(self, cmds: Script):
         """Prepare the experiment. Inherit this method to add more commands."""
         pass
 
@@ -80,7 +80,7 @@ class BaseCameraExperiment(Experiment):
         """Shutdown the experiment. Inherit this method to add more commands."""
         pass
 
-    def make_labctl_script(self) -> Cmds:
+    def make_labctl_script(self) -> Script:
         cmds = self.make_labctl_header()
         self.pdg = cast(BncPdgCmds, list(cmds.devices.keys())[0])
 
