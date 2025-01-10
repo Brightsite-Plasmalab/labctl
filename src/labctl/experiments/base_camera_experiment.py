@@ -18,14 +18,24 @@ class BaseCameraExperiment(Experiment):
     N_frames: list[int]
     T_exposure: float
     camera_delay_optimum: float
+    camera_delay_background: float
 
     pdg: BncPdgCmds
 
-    def __init__(self, N_iter, N_frames, T_exposure, camera_delay_optimum, **kwargs):
+    def __init__(
+        self,
+        N_iter,
+        N_frames,
+        T_exposure,
+        camera_delay_optimum,
+        camera_delay_background=0e-9,
+        **kwargs,
+    ):
         self.N_iter = N_iter
         self.N_frames = N_frames
         self.T_exposure = T_exposure
         self.camera_delay_optimum = camera_delay_optimum
+        self.camera_delay_background = camera_delay_background
         super().__init__(**kwargs)
 
     @abstractmethod
@@ -60,11 +70,12 @@ class BaseCameraExperiment(Experiment):
             return self.camera_delay_optimum
         else:
             # background
-            return 0e-9
+            return self.camera_delay_background
 
     def perform_measurement(self, cmds, iteration, config, frame, version):
         """Perform a single measurement."""
-        cmds += f"# Acquiring: config {config:d}, {'foreground' if version == 0 else 'background'} ({frame+1:d}/{self.N_frames[config]:d}), iteration {iteration+1:d}/{self.N_iter:d}"
+        cmds += f"# Acquiring: config {config:d}/{len(self.N_frames):d}, {'foreground' if version == 0 else 'background'} ({frame+1:d}/{self.N_frames[config]:d}), iteration {iteration+1:d}/{self.N_iter:d}"
+        # cmds += f"# Acquiring: config {config:d}, {'foreground' if version == 0 else 'background'} ({frame+1:d}/{self.N_frames[config]:d}), iteration {iteration+1:d}/{self.N_iter:d}"
 
         # Get the camera delay for this version (foreground/background)
         cameradelay = self.get_camera_delay(config, version)
