@@ -83,7 +83,7 @@ class BaseCameraExperiment(Experiment):
 
         # Get the camera delay for this version (foreground/background)
         cameradelay = self.get_camera_delay(config, version)
-        self.pdg.delay(3, cameradelay)
+        self.pdg.delay(3, cameradelay)  # Channel C
 
         # Trigger the camera
         self.pdg.arm()
