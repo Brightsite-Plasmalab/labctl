@@ -218,6 +218,48 @@ class BaseCameraExperiment(Experiment):
         }
         return info_obj
 
+    def postprocess(f_data, f_pickle=None):
+        import pickle as pkl
+        from toddler.data.spectrum import Spectrum
+
+        if f_pickle is None:
+            f_pickle = f_data.with_stem(f_data.stem + "_idx").with_suffix(".pkl")
+
+        def get_data(data, info, config):
+            # Get the keys for the signal and background indices
+            sig_key = f"{config}_sig"
+            bg_key = f"{config}_bg"
+
+            if not sig_key in info:
+                return None, None
+
+            # Get the indices for the signal and background
+            sig_ind = info[sig_key]
+            bg_ind = info[bg_key]
+
+            # Get the data for the signal and background
+            sig_data = data[:, :, sig_ind[0]]
+            bg_data = data[:, :, bg_ind[0]]
+
+            sig_data_avg = sig_data.c.median(axis=2)
+            bg_data_avg = bg_data.c.median(axis=2)
+
+            return sig_data, bg_data, sig_data_avg - bg_data_avg
+
+        # Load pickle file
+        info = pkl.load(open(f_pickle, "rb"))
+
+        # Load sif file
+        data = Spectrum.from_file(f_data)
+        data._axis_lambda = 0
+
+        # Postprocess all configs
+        results = {}
+        for i, config in enumerate(info["configs"]):
+            results[config] = get_data(data, info, i)
+
+        return results
+
     def make_postprocessing_script(self):
         code = """import pickle
 import sif_parser
