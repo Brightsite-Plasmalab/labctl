@@ -38,6 +38,10 @@ class BaseCameraExperiment(Experiment):
         self.camera_delay_background = camera_delay_background
         super().__init__(**kwargs)
 
+        assert len(N_frames) == len(
+            self.get_config_names()
+        ), "N_frames should have the same length as the number of configurations"
+
     @abstractmethod
     def get_config_names(self) -> List[str]:
         """Get the human-readable names of the configurations."""
