@@ -27,7 +27,9 @@ class LaserPulsedMicrowaveTimesweep(BaseCameraExperiment):
         self.channel_MW_trigger = channel_MW_trigger  # Should be in [A, B, ..., H]
         self.channel_MW_trigger_int = (
             ord(channel_MW_trigger) - ord("A") + 1
-        )  # Channel A <=> 0, etc
+        )  # Channel A -> 0, B -> 1, ...
+
+        # Perform some checks
         assert self.channel_MW_trigger_int in range(
             1, 9
         ), f"Invalid channel {channel_MW_trigger}, should be in [A, B, ..., H]"
@@ -44,7 +46,7 @@ class LaserPulsedMicrowaveTimesweep(BaseCameraExperiment):
         multiple = self.MW_pulse_frequency // 30
         if multiple <= 1:
             print(
-                "Running at 30Hz makes it impossible to get a background signal. Beware, and think of a different method for acquiring the background."
+                "Running at 30Hz makes it impossible to get a background signal. Beware, and think of a different method for acquiring the background, such as a separate measurement with the laser off."
             )
 
         print(f"The microwave pulse frequency is {self.MW_pulse_frequency} Hz")
@@ -74,7 +76,10 @@ class LaserPulsedMicrowaveTimesweep(BaseCameraExperiment):
         }
 
     def get_mw_delay(self, i):
-        return self.t0 + self.delta_T[i]
+        delay = self.t0 - self.delta_T[i]
+        if delay < -900e-6:
+            delay += 1 / self.MW_pulse_frequency
+        return delay
 
     @abstractmethod
     def prepare_config(self, cmds, i):
