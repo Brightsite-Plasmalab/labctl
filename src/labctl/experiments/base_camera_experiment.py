@@ -137,22 +137,13 @@ class BaseCameraExperiment(Experiment):
             "# Channel G - gate",
         ]
         self.pdg.enable("G", True)  # Enable channel G
-        self.pdg.delay("G", -100e-9)
+        self.pdg.delay("G", 0e-9)
+        self.pdg.sync("G", "T0")
         self.pdg.pulsewidth("G", T_pulse)
         self.pdg.output("G", "ADJ", voltage=4)  # Output 4V
         self.pdg.polarity("G", "NORM")  # Normal polarity
-        self.pdg.burstcount("G", 1)  # Burst count = 1
-        self.pdg.channel_mode("G", "BURS")
+        self.pdg.channel_mode("G", "SING")
         self.pdg.channel_gate(self.camera_channel, "LOW")
-
-        # ":PULS7:STAT ON",
-        # f":PULS7:DELAY {-100e-9:.10f}",
-        # f":PULS7:WIDT {T_pulse-1e-3:.10f}",
-        # ":PULS7:OUTP:MOD ADJ",  # Output 4V
-        # ":PULS7:OUTP:AMPL 4",
-        # ":PULS7:POL NORM",  # Normal polarity
-        # ":PULS7:CMOD SING",
-        # ":PULS3:CGAT LOW",
 
         # For every iteration of measurements ...
         for i in range(self.N_iter):
