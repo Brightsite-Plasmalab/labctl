@@ -29,7 +29,7 @@ class LaserPulsedMicrowaveTimesweep(BaseCameraExperiment):
             ord(channel_MW_trigger) - ord("A") + 1
         )  # Channel A -> 0, B -> 1, ...
 
-        # Perform some checks
+        # Perform some checks to see if all inputs are valid
         assert self.channel_MW_trigger_int in range(
             1, 9
         ), f"Invalid channel {channel_MW_trigger}, should be in [A, B, ..., H]"
@@ -41,12 +41,12 @@ class LaserPulsedMicrowaveTimesweep(BaseCameraExperiment):
         self.MW_pulse_frequency = MW_pulse_frequency
 
         assert (
-            self.MW_pulse_frequency % 30 == 0
-        ), f"The microwave pulse frequency should be a multiple of the laser frequency (30Hz). The closest multiple is {30 * round(self.MW_pulse_frequency / 30)}Hz"
-        multiple = self.MW_pulse_frequency // 30
+            self.MW_pulse_frequency % self.laser_frequency == 0
+        ), f"The microwave pulse frequency should be a multiple of the laser frequency ({self.laser_frequency}Hz). The closest multiple is {self.laser_frequency * round(self.MW_pulse_frequency / self.laser_frequency)}Hz"
+        multiple = self.MW_pulse_frequency // self.laser_frequency
         if multiple <= 1:
             print(
-                "Running at 30Hz makes it impossible to get a background signal. Beware, and think of a different method for acquiring the background, such as a separate measurement with the laser off."
+                f"Running at {self.laser_frequency}Hz makes it impossible to get a background signal. Beware, and think of a different method for acquiring the background, such as a separate measurement with the laser off."
             )
 
         print(f"The microwave pulse frequency is {self.MW_pulse_frequency} Hz")
@@ -82,9 +82,10 @@ class LaserPulsedMicrowaveTimesweep(BaseCameraExperiment):
         return delay
 
     @abstractmethod
-    def prepare_config(self, cmds, i):
+    def prepare_config(self, cmds: Script, i):
         """Prepares experimental configuration i."""
         self.pdg.delay(self.channel_MW_trigger_int, self.get_mw_delay(i))
+        cmds.pause(1000)
         pass
 
     def get_camera_delay(self, config, version):
