@@ -17,8 +17,10 @@ class BaseCameraExperiment(Experiment):
     N_iter: int
     N_frames: list[int]
     T_exposure: float
+    laser_frequency: int
     camera_delay_optimum: float
     camera_delay_background: float
+    camera_channel: str = "C"  # Channel for the camera trigger
 
     pdg: BncPdgCmds
 
@@ -29,6 +31,8 @@ class BaseCameraExperiment(Experiment):
         T_exposure,
         camera_delay_optimum,
         camera_delay_background=0e-9,
+        laser_frequency=30,
+        camera_channel="C",
         **kwargs,
     ):
         self.N_iter = N_iter
@@ -36,6 +40,9 @@ class BaseCameraExperiment(Experiment):
         self.T_exposure = T_exposure
         self.camera_delay_optimum = camera_delay_optimum
         self.camera_delay_background = camera_delay_background
+        self.laser_frequency = laser_frequency
+        self.camera_channel = camera_channel
+
         super().__init__(**kwargs)
 
         assert len(N_frames) == len(
@@ -67,6 +74,9 @@ class BaseCameraExperiment(Experiment):
         """Prepares experimental configuration i."""
         pass
 
+    def get_measurement_versions(self):
+        return ["foreground", "background"]
+
     def get_camera_delay(self, config, version):
         """Get the camera delay for a specific configuration, frame, and version."""
         if version == 0:
@@ -78,8 +88,7 @@ class BaseCameraExperiment(Experiment):
 
     def perform_measurement(self, cmds, iteration, config, frame, version):
         """Perform a single measurement."""
-        cmds += f"# Acquiring: config {config:d}/{len(self.N_frames):d}, {'foreground' if version == 0 else 'background'} ({frame+1:d}/{self.N_frames[config]:d}), iteration {iteration+1:d}/{self.N_iter:d}"
-        # cmds += f"# Acquiring: config {config:d}, {'foreground' if version == 0 else 'background'} ({frame+1:d}/{self.N_frames[config]:d}), iteration {iteration+1:d}/{self.N_iter:d}"
+        cmds += f"# Acquiring: config {config+1:d}/{len(self.N_frames):d}, {self.get_measurement_versions()[version]} ({frame+1:d}/{self.N_frames[config]:d}), iteration {iteration+1:d}/{self.N_iter:d}"
 
         # Get the camera delay for this version (foreground/background)
         cameradelay = self.get_camera_delay(config, version)
@@ -104,7 +113,7 @@ class BaseCameraExperiment(Experiment):
         ###################
 
         # Acquisition parameters
-        T_pulse = 1 / 30
+        T_pulse = 1 / self.laser_frequency  # Pulse period
         N_accumulate = math.floor(1 / T_pulse * self.T_exposure) + 1
         self.T_exposure = (N_accumulate - 0.5) * T_pulse
         print(f"Pulses per frame: {N_accumulate:.0f}")
@@ -123,18 +132,27 @@ class BaseCameraExperiment(Experiment):
         cmds.switch_device(self.pdg)
 
         # Set Channel G (gate) settings
-        # This blocks the first pulse in a burst, which does not reflect new channel settings
+        # NB: This blocks the first pulse in a burst, which does not reflect new channel settings
         cmds += [
             "# Channel G - gate",
-            ":PULS7:STAT ON",
-            f":PULS7:DELAY {-100e-9:.10f}",
-            f":PULS7:WIDT {T_pulse-1e-3:.10f}",
-            # ":PULS7:OUTP:MOD ADJ",  # Output 4V
-            ":PULS7:OUTP:AMPL 4",
-            ":PULS7:POL NORM",  # Normal polarity
-            ":PULS7:CMOD SING",
-            ":PULS3:CGAT LOW",
         ]
+        self.pdg.enable("G", True)  # Enable channel G
+        self.pdg.delay("G", -100e-9)
+        self.pdg.pulsewidth("G", T_pulse)
+        self.pdg.output("G", "ADJ", voltage=4)  # Output 4V
+        self.pdg.polarity("G", "NORM")  # Normal polarity
+        self.pdg.burstcount("G", 1)  # Burst count = 1
+        self.pdg.channel_mode("G", "BURS")
+        self.pdg.channel_gate(self.camera_channel, "LOW")
+
+        # ":PULS7:STAT ON",
+        # f":PULS7:DELAY {-100e-9:.10f}",
+        # f":PULS7:WIDT {T_pulse-1e-3:.10f}",
+        # ":PULS7:OUTP:MOD ADJ",  # Output 4V
+        # ":PULS7:OUTP:AMPL 4",
+        # ":PULS7:POL NORM",  # Normal polarity
+        # ":PULS7:CMOD SING",
+        # ":PULS3:CGAT LOW",
 
         # For every iteration of measurements ...
         for i in range(self.N_iter):
@@ -155,12 +173,7 @@ class BaseCameraExperiment(Experiment):
                 # Repeat for the desired number of frames per batch
                 for k in range(N_frames_j):
                     # First do a burst for the foreground, then one for the background.
-                    for l, _ in enumerate(
-                        [
-                            "foreground",
-                            "background",
-                        ]
-                    ):
+                    for l, _ in enumerate(self.get_measurement_versions()):
                         self.perform_measurement(cmds, i, j, k, l)
 
         self.shutdown_experiment()
@@ -218,12 +231,16 @@ class BaseCameraExperiment(Experiment):
         }
         return info_obj
 
-    def postprocess(f_data, f_pickle=None):
+    def postprocess(f_data, f_pickle=None, info=None):
         import pickle as pkl
         from toddler.data.spectrum import Spectrum
 
         if f_pickle is None:
             f_pickle = f_data.with_stem(f_data.stem + "_idx").with_suffix(".pkl")
+
+        # Load pickle file
+        if info is None:
+            info = pkl.load(open(f_pickle, "rb"))
 
         def get_data(data, info, config):
             # Get the keys for the signal and background indices
@@ -245,9 +262,6 @@ class BaseCameraExperiment(Experiment):
             bg_data_avg = bg_data.c.median(axis=2)
 
             return sig_data, bg_data, sig_data_avg - bg_data_avg
-
-        # Load pickle file
-        info = pkl.load(open(f_pickle, "rb"))
 
         # Load sif file
         data = Spectrum.from_file(f_data)
