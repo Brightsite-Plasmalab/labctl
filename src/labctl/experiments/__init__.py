@@ -10,3 +10,4 @@ from labctl.experiments.experiment_polarisation import PolarisationFilterExperim
 from labctl.experiments.experiment import Experiment
 
 from labctl.experiments.experiment_laser_simple import SimpleLaserExperiment
+from labctl.experiments.experiment_oes_timesweep import OESTimesweepExperiment
