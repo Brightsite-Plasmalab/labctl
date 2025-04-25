@@ -92,7 +92,7 @@ class BaseCameraExperiment(Experiment):
 
         # Get the camera delay for this version (foreground/background)
         cameradelay = self.get_camera_delay(config, version)
-        self.pdg.delay(3, cameradelay)  # Channel C
+        self.pdg.delay(self.camera_channel, cameradelay)
 
         # Trigger the camera
         self.pdg.arm()
@@ -157,9 +157,7 @@ class BaseCameraExperiment(Experiment):
                     continue
 
                 # Set the desired pulse burst count
-                self.pdg.burstcount(
-                    3, N_accumulate + 1  # Account for the first pulse being skipped
-                )
+                self.pdg.burstcount(self.camera_channel, N_accumulate + 1)
 
                 # Repeat for the desired number of frames per batch
                 for k in range(N_frames_j):
