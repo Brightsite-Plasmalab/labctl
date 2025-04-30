@@ -173,7 +173,7 @@ class BaseCameraExperiment(Experiment):
             f"Total wait: {cmds.total_wait/1e3/60:.1f}min",
             f"NB: Put the PDG in burst mode",
             f"Kinetic acquisition settings:",
-            f"\tExposure time:\t\t{self.T_exposure:.2f}s",
+            f"\tExposure time:\t\t{self.T_exposure:.3f}s",
             f"\tAccumulation count:\t1",
             f"\tFrame count:\t\t{N_total}",
         ]
