@@ -140,7 +140,7 @@ class BaseCameraExperiment(Experiment):
         self.pdg.delay("G", 0e-9)
         self.pdg.sync("G", "T0")
         self.pdg.pulsewidth("G", T_pulse)
-        self.pdg.output("G", "ADJ", voltage=4)  # Output 4V
+        # self.pdg.output("G", "ADJ", voltage=4)  # Output 4V
         self.pdg.polarity("G", "NORM")  # Normal polarity
         self.pdg.channel_mode("G", "SING")
         self.pdg.channel_gate(self.camera_channel, "LOW")
