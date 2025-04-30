@@ -88,7 +88,7 @@ class BncPdgCmds(DeviceBase):
     def channel_mode(self, channel, mode) -> BncPdgCmds:
         channel = self.verify_channel(channel)
         if mode in ["NORM", "SING", "BURS", "DCYC"]:
-            self.append(f":PULS{channel:d}:MOD {mode}")
+            self.append(f":PULS{channel:d}:CMOD {mode}")
         else:
             raise ValueError(
                 f"Invalid mode {mode}, should be in [NORM, SING, BURS, DCYC]"
