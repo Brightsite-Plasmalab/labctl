@@ -1,4 +1,4 @@
-from typing import List
+from typing_extensions import List
 from labctl.devices import ThorlabsStageCmds
 from labctl.experiments.base_camera_experiment import BaseCameraExperiment
 

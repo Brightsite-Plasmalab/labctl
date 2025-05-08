@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import List, Self, Union
+from typing_extensions_extensions import List, Self, Union
 import time
 from labctl.devices.base import DeviceBase
 from labctl.script.base import ScriptBase

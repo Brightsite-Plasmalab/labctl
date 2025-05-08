@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Union
+from typing_extensions import Union
 from labctl.devices.base import DeviceBase
 
 

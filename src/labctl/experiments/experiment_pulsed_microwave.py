@@ -1,7 +1,6 @@
-from typing import List
+from typing_extensions import List
 from labctl.experiments.base_camera_experiment import BaseCameraExperiment
 from abc import abstractmethod
-from typing import List
 from labctl.script import Script
 from labctl.experiments.base_camera_experiment import BaseCameraExperiment
 import re
