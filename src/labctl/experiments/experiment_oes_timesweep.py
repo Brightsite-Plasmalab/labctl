@@ -1,4 +1,4 @@
-from typing_extensions_extensions import List, override
+from typing_extensions import List, override
 from labctl.experiments.base_camera_experiment import BaseCameraExperiment
 
 
