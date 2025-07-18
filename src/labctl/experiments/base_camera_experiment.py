@@ -1,5 +1,5 @@
 import math
-from typing_extensions import List, cast
+from typing_extensions import List, cast, Tuple
 import numpy as np
 from labctl.script import Script
 from labctl.devices import BncPdgCmds
@@ -220,7 +220,7 @@ class BaseCameraExperiment(Experiment):
         }
         return info_obj
 
-    def postprocess(f_data, f_pickle=None, info=None):
+    def postprocess(f_data, f_pickle=None, info=None) -> Tuple[any, any, any]:
         import pickle as pkl
         from toddler.data.spectrum import Spectrum
 
