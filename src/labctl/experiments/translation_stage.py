@@ -12,9 +12,11 @@ class TranslationStageExperimentKwargs(CameraExperimentKwargs):
 class TranslationStageExperiment(CameraExperiment):
     translationstage: PiTranslationStage
 
-    def __init__(self, x: list[float] = None, **kwargs: Unpack[CameraExperimentKwargs]):
+    def __init__(self, x: list[float] = None, **kwargs):
+        if x is None:
+            msg = "x must be provided as a keyword argument"
+            raise ValueError(msg)
         self.x = x
-        assert x is not None, "x must be provided as a keyword argument"
         super().__init__(**kwargs)
         self.check_N_frames(
             len(self.x), " One configuration for each translation stage position."
@@ -42,6 +44,7 @@ class TranslationStageExperiment(CameraExperiment):
         return [f"x_{xi:.3f}mm".replace(".", "_") for xi in self.x]
 
     def prepare_config(self, cmds, i):
+        super().prepare_config(cmds, i)
         xi = self.x[i]
         cmds.comment(f"Selecting position {i}: {xi:.3f} mm")
         self.translationstage.move_to(axis=1, position=xi)

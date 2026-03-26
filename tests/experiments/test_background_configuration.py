@@ -9,61 +9,13 @@ from labctl.experiments.camera_timesweep import CameraTimesweepExperiment
 @pytest.mark.parametrize(
     ("config", "foreground_num", "expected"),
     [
-        (
-            BackgroundConfiguration.EVERY_FRAME,
-            3,
-            [
-                "foreground",
-                "background",
-                "foreground",
-                "background",
-                "foreground",
-                "background",
-            ],
-        ),
+        (BackgroundConfiguration.EVERY_FRAME, 3, ["foreground", "background", "foreground", "background", "foreground", "background"]),
         (BackgroundConfiguration.NONE, 3, ["foreground", "foreground", "foreground"]),
-        (
-            BackgroundConfiguration.BEGIN,
-            3,
-            ["background", "foreground", "foreground", "foreground"],
-        ),
-        (
-            BackgroundConfiguration.END,
-            3,
-            ["foreground", "foreground", "foreground", "background"],
-        ),
-        (
-            BackgroundConfiguration.BEGIN_MIDDLE_END,
-            4,
-            [
-                "background",
-                "foreground",
-                "foreground",
-                "background",
-                "foreground",
-                "foreground",
-                "background",
-            ],
-        ),
-        (
-            BackgroundConfiguration.BEGIN_MIDDLE_END,
-            5,
-            [
-                "background",
-                "foreground",
-                "foreground",
-                "background",
-                "foreground",
-                "foreground",
-                "foreground",
-                "background",
-            ],
-        ),
-        (
-            BackgroundConfiguration.BEGIN_END,
-            3,
-            ["background", "foreground", "foreground", "foreground", "background"],
-        ),
+        (BackgroundConfiguration.BEGIN, 3, ["background", "foreground", "foreground", "foreground"]),
+        (BackgroundConfiguration.END, 3, ["foreground", "foreground", "foreground", "background"]),
+        (BackgroundConfiguration.BEGIN_MIDDLE_END, 4, ["background", "foreground", "foreground", "background", "foreground", "foreground", "background"]),
+        (BackgroundConfiguration.BEGIN_MIDDLE_END, 5, ["background", "foreground", "foreground", "background", "foreground", "foreground", "foreground", "background"]),
+        (BackgroundConfiguration.BEGIN_END, 3, ["background", "foreground", "foreground", "foreground", "background"]),
     ],
 )
 def test_make_name_list_expected_sequences(

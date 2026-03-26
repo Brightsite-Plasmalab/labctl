@@ -37,6 +37,7 @@ class PolarisationFilterCalibrationExperiment(CameraExperiment):
         return [f"alpha_{alphai:.3f}_deg".replace(".", "_") for alphai in self.alpha]
 
     def prepare_config(self, cmds, i):
+        super().prepare_config(cmds, i)
         alphai = self.alpha[i]
         cmds.comment(f"Selecting rotation {i}: {alphai:.3f} degrees")
         self.rotationstage.goto_degrees(alphai)

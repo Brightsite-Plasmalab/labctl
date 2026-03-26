@@ -5,10 +5,7 @@ from labctl.experiments.laser_Qswitch_timesweep import LaserTimesweepExperiment
 from labctl.experiments.polarisation_calibration import (
     PolarisationFilterCalibrationExperiment,
 )
-from labctl.experiments.pulsed_microwave import PulsedMicrowaveTimesweep
-from labctl.experiments.polarisation import PolarisationFilterExperiment
-from labctl.experiments.base import BaseExperiment
-from labctl.experiments.polarised_translation_stage import (
+from labctl.experiments.experiment_polarised_translation_stage import (
     PolarisedTranslationStageExperiment,
 )
 from labctl.experiments.simple import SimpleCameraExperiment

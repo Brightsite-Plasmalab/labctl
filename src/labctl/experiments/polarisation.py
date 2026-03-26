@@ -20,7 +20,9 @@ class PolarisationFilterExperiment(CameraExperiment):
         alpha_hor: float = None,
         **kwargs: Unpack[CameraExperimentKwargs],
     ):
-        assert alpha_ver is not None, "alpha_ver must be provided as a keyword argument"
+        if alpha_ver is None:
+            msg = "alpha_ver must be provided as a (keyword) argument"
+            raise ValueError(msg)
         self.alpha_ver = alpha_ver
         if alpha_hor is None:
             alpha_hor = alpha_ver + 90.0
@@ -45,6 +47,8 @@ class PolarisationFilterExperiment(CameraExperiment):
         return ["ver", "hor"]
 
     def prepare_config(self, cmds, i):
+        super().prepare_config(cmds, i)
+
         if i == 0:
             alphai = self.alpha_ver
             cmds.comment(f"Selecting vertical rotation: {alphai:.3f} degrees")
@@ -56,6 +60,8 @@ class PolarisationFilterExperiment(CameraExperiment):
 
     def make_postprocessing_info(self):
         info = super().make_postprocessing_info()
+
+        # TODO: isn't alpha already set in super class?
         info.update(
             {
                 "variable": "alpha",

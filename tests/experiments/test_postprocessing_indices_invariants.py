@@ -100,6 +100,7 @@ def test_postprocessing_indices_are_well_formed(
 
     indices = info["indices"]
     assert isinstance(indices, list)
+    assert len(indices) == exp.n_iter
 
     expected = _expected_indices_for_first_iteration(exp)
     first_iteration = indices
