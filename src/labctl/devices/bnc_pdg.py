@@ -36,37 +36,31 @@ class BncPdgCmds(DeviceBase):
                     f"Invalid channel {channel}, should be in [1, 2, ..., 8]"
                 )
 
-    def delay(self, channel, delay) -> BncPdgCmds:
+    def delay(self, channel, delay):
         channel = self.verify_channel(channel)
         self.append(f":PULS{channel:d}:DELAY {delay:.10f}")
-        return self
 
-    def pulsewidth(self, channel, T_pulse) -> BncPdgCmds:
+    def pulsewidth(self, channel, t_pulse):
         channel = self.verify_channel(channel)
-        self.append(f":PULS{channel:d}:WIDT {T_pulse:.10f}")
-        return self
+        self.append(f":PULS{channel:d}:WIDT {t_pulse:.10f}")
 
-    def arm(self) -> BncPdgCmds:
+    def arm(self):
         # Persist previous command by waiting for a bit
         self.parent.pause(50)
-
         self.append("*ARM")
-        return self
 
-    def burstcount(self, channel, count) -> BncPdgCmds:
+    def burstcount(self, channel, count):
         channel = self.verify_channel(channel)
         self.append(f":PULS{channel:d}:BCO {count:.0f}")
-        return self
 
-    def enable(self, channel, enable) -> BncPdgCmds:
+    def enable(self, channel, enable):
         channel = self.verify_channel(channel)
         if enable:
             self.append(f":PULS{channel:d}:STAT ON")
         else:
             self.append(f":PULS{channel:d}:STAT OFF")
-        return self
 
-    def polarity(self, channel, polarity) -> BncPdgCmds:
+    def polarity(self, channel, polarity):
         channel = self.verify_channel(channel)
         if polarity in ["NORM", "INV", "COMP"]:
             self.append(f":PULS{channel:d}:POL {polarity}")
@@ -74,18 +68,16 @@ class BncPdgCmds(DeviceBase):
             raise ValueError(
                 f"Invalid polarity {polarity}, should be in [NORM, INV, COMP]"
             )
-        return self
 
-    def output(self, channel, mode, voltage=0) -> BncPdgCmds:
+    def output(self, channel, mode, voltage=0):
         channel = self.verify_channel(channel)
         if mode == "TTL":
             self.append(f":PULS{channel:d}:OUTP:MOD TTL")
         elif mode == "ADJ":
             self.append(f":PULS{channel:d}:OUTP:MOD ADJ")
             self.append(f":PULS{channel:d}:OUTP:AMPL {voltage:.1f}")
-        return self
 
-    def channel_mode(self, channel, mode) -> BncPdgCmds:
+    def channel_mode(self, channel, mode):
         channel = self.verify_channel(channel)
         if mode in ["NORM", "SING", "BURS", "DCYC"]:
             self.append(f":PULS{channel:d}:CMOD {mode}")
@@ -93,17 +85,15 @@ class BncPdgCmds(DeviceBase):
             raise ValueError(
                 f"Invalid mode {mode}, should be in [NORM, SING, BURS, DCYC]"
             )
-        return self
 
-    def channel_gate(self, channel, gate) -> BncPdgCmds:
+    def channel_gate(self, channel, gate):
         channel = self.verify_channel(channel)
         if gate in ["DIS", "LOW", "HIGH"]:
             self.append(f":PULS{channel:d}:CGAT {gate}")
         else:
             raise ValueError(f"Invalid gate {gate}, should be in [DIS, LOW, HIGH]")
-        return self
 
-    def sync(self, channel, ref) -> BncPdgCmds:
+    def sync(self, channel, ref):
         channel = self.verify_channel(channel)
         if ref == "T0":
             pass
@@ -111,4 +101,3 @@ class BncPdgCmds(DeviceBase):
             ref = "CH" + self.get_channel_name(ref)
 
         self.append(f":PULS{channel:d}:SYNC {ref}")
-        return self

@@ -1,4 +1,4 @@
-from labctl.script.base import ScriptBase
+from labctl.script.meta_command import MetaCommands
 
 
 class DeviceBase:
@@ -8,10 +8,9 @@ class DeviceBase:
     Attributes:
         parent (Cmds): The parent command collection.
     """
+    parent: MetaCommands
 
-    parent: ScriptBase
-
-    def __init__(self, parent: ScriptBase) -> None:
+    def __init__(self, parent: MetaCommands) -> None:
         self.parent = parent
 
     def append(self, commands) -> None:

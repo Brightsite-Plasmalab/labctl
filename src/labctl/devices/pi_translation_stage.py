@@ -6,59 +6,50 @@ from labctl.script.base import ScriptBase
 class PiTranslationStage(DeviceBase):
     x_current: float
 
-    def stop(self) -> PiTranslationStage:
-        """Stop motion of all axes immediately"""
+    def stop(self):
+        """Stop the motion of all axes immediately"""
         self.append("STP")
-        return self
 
-    def SAI(self) -> PiTranslationStage:
+    def SAI(self):
         """Identify axis names"""
         self.append("SAI")
-        return self
 
-    def reset_error(self) -> PiTranslationStage:
+    def reset_error(self):
         """Reset errors"""
         self.append("ERR?")
-        return self
 
-    def set_reference_mode(self, axis=1, mode="manual") -> PiTranslationStage:
+    def set_reference_mode(self, axis=1, mode="manual"):
         """Set the reference mode of the specified axis to manual or reference move"""
         modenum = 0 if mode == "manual" else 1
         if modenum == 1:
             raise NotImplementedError("Reference move mode not implemented yet")
 
         self.append(f"RON {axis:d} {modenum:d}")
-        return self
 
-    def set_servo(self, axis=1, enable=True) -> PiTranslationStage:
+    def set_servo(self, axis=1, enable=True):
         """Enable or disable the servo of the specified axis"""
         self.append(f"SVO {axis:d} {int(enable):d}")
-        return self
 
-    def set_position(self, axis=1, position=0.0) -> PiTranslationStage:
+    def set_position(self, axis=1, position=0.0):
         """Set the position of the specified axis"""
         self.append(f"POS {axis:d} {position:.3f}")
         self.x_current = position
-        return self
 
-    def get_position(self) -> PiTranslationStage:
+    def get_position(self):
         """Get the current position of the specified axis"""
         self.append("POS?")
-        return self
 
-    def move_to(self, axis=1, position=0.0) -> PiTranslationStage:
+    def move_to(self, axis=1, position=0.0):
         """Move the specified axis to the specified position"""
         self.append(f"MOV {axis:d} {position:.3f}")
         dx = abs(position - self.x_current)
         T_wait = dx * 2
         self.parent.pause(T_wait * 1000)
         self.x_current = position
-        return self
 
-    def get_last_move(self) -> PiTranslationStage:
+    def get_last_move(self):
         """Get the last movement command"""
         self.append("MOV?")
-        return self
 
 
 if __name__ == "__main__":
