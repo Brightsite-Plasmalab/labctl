@@ -1,16 +1,15 @@
-from labctl.experiments.base_camera_experiment import BaseCameraExperiment
-from labctl.experiments.experiment_translation_stage import TranslationStageExperiment
-from labctl.experiments.experiment_2d_imaging import Raman_2D_Experiment
-from labctl.experiments.experiment_laser_timesweep import LaserTimesweepExperiment
-from labctl.experiments.experiment_polarisation_calibration import (
+from labctl.experiments.camera import CameraExperiment
+from labctl.experiments.translation_stage import TranslationStageExperiment
+from labctl.experiments.raman_2d import Raman2DExperiment
+from labctl.experiments.laser_Qswitch_timesweep import LaserTimesweepExperiment
+from labctl.experiments.polarisation_calibration import (
     PolarisationFilterCalibrationExperiment,
 )
 from labctl.experiments.experiment_polarised_translation_stage import (
     PolarisedTranslationStageExperiment,
 )
-from labctl.experiments.experiment_pulsed_microwave import LaserPulsedMicrowaveTimesweep
-from labctl.experiments.experiment_polarisation import PolarisationFilterExperiment
-from labctl.experiments.experiment import Experiment
+from labctl.experiments.pulsed_microwave import PulsedMicrowaveTimesweep
+from labctl.experiments.polarisation import PolarisationFilterExperiment
+from labctl.experiments.base import BaseExperiment
 
-from labctl.experiments.experiment_laser_simple import SimpleLaserExperiment
-from labctl.experiments.experiment_oes_timesweep import OESTimesweepExperiment
+from labctl.experiments.camera_timesweep import CameraTimesweepExperiment

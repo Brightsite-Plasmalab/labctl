@@ -1,21 +1,21 @@
-from typing_extensions import List
+from typing_extensions import List, Unpack
 from labctl.devices import ThorlabsStageCmds
-from labctl.experiments.base_camera_experiment import BaseCameraExperiment
+from labctl.experiments.camera import CameraExperiment, CameraExperimentKwargs
 
 
-class Raman_2D_Experiment(BaseCameraExperiment):
+class Raman2DExperimentKwargs(CameraExperimentKwargs):
     filters: list[str]
+
+class Raman2DExperiment(CameraExperiment):
     filterstage: ThorlabsStageCmds
 
-    def __init__(self, filters, **kwargs):
+    def __init__(self, filters: list[str], **kwargs: Unpack[CameraExperimentKwargs]):
         self.filters = filters
         super().__init__(**kwargs)
-
-    def get_config_names(self) -> List[str]:
-        return self.filters
+        self.check_N_frames(len(self.filters), " One configuration for each filter.")
 
     def prepare_config(self, cmds, i):
-        cmds += f"# Selecting filter {i}"
+        cmds.append(f"# Selecting filter {i}")
 
         if i == 0:
             # Filter 0 is selected by homing
@@ -33,4 +33,9 @@ class Raman_2D_Experiment(BaseCameraExperiment):
         return cmds
 
     def make_postprocessing_info(self):
-        return {"filters": self.filters, **super().make_postprocessing_info()}
+        info = super().make_postprocessing_info()
+        info.update({
+            "variable": "filters",
+            "filters": self.filters,
+        })
+        return info

@@ -1,60 +1,28 @@
 from __future__ import annotations
-from typing_extensions import List, Self, Union
 import time
 from labctl.devices.base import DeviceBase
 from labctl.script.base import ScriptBase
 
 
-class MetaCommands(ScriptBase):
-    """
-    MetaCommands represents a collection of commands that are resolved by the interpreter rather than submitted over the serial port.
-    Subclassing from MetaCommands allows for the use of the pause and comment methods.
-    """
-
-    total_wait = 0
-
-    def pause(self, milliseconds) -> Self:
-        """
-        Pause the execution of the script for a certain number of milliseconds.
-        """
-        self += f"#WAIT {milliseconds:.0f}"
-        self.total_wait += milliseconds
-        return self
-
-    def comment(self, comment) -> Self:
-        """
-        Add a comment to the script, which is printed in the terminal when the script is executed.
-        """
-        self += comment
-        return self
-
-    def test(self, test_command, result):
-        """
-        Add a test command to the script, which is sent to a serial device and compared to the expected result.
-        """
-        self += f"#TEST {test_command} == {result}"
-        return self
-
-
 class ScriptInfo(ScriptBase):
-    title: str | None = None
-    date: str | None = None
-    author: str | None = None
+    title: str | None
+    date: str
+    author: str | None
 
     def __init__(self, title: str | None = None, author: str | None = None) -> None:
         self.title = title
         self.date = time.strftime("%Y-%m-%d__%H:%M:%S")
         self.devices = {}
         self.author = author
-        self.lines = []
+        super().__init__()
 
-    def header_info(self) -> Self:
-        self += f"# Configuration file for lab automation"
+    def header_info(self):
+        self.append(f"# Configuration file for lab automation")
         if self.title is not None:
-            self += f"#   Title:  {self.title}"
-        self += f"#   Date:   {self.date}"
-        self += f"#   Author: {self.author}"
-        return self
+            self.append(f"#   Title:  {self.title}")
+        self.append(f"#   Date:   {self.date}")
+        if self.author is not None:
+            self.append(f"#   Author: {self.author}")
 
 
 class DeviceCommands(ScriptBase):
@@ -109,7 +77,7 @@ class DeviceCommands(ScriptBase):
         else:
             raise Exception(f"Invalid channel type: {type(channel)}")
 
-    def append(self, commands: Union[str, List[str]], device=None) -> Self:
+    def append(self, commands: str | list[str], device=None):
         if device is not None:
             self.switch_device(device)
 
