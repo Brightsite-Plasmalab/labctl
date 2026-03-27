@@ -22,6 +22,8 @@ class MetaCommands(ScriptBase):
         """
         Add a comment to the script, which is printed in the terminal when the script is executed.
         """
+        if not comment.startswith("# "):
+            comment = "# " + comment
         self.append(f"# {comment}")
         return self
 
