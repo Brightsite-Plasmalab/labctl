@@ -1,41 +1,31 @@
-from typing_extensions import List
-from labctl.devices import PiTranslationStage
+from typing import Unpack
+
+from build.lib.labctl.experiments.polarisation import PolarisationFilterExperimentKwargs
+from build.lib.labctl.experiments.translation_stage import TranslationStageExperimentKwargs
 from labctl.script import Script
 from labctl.experiments.polarisation import PolarisationFilterExperiment
 from labctl.experiments.translation_stage import TranslationStageExperiment
 
 
+class PolarisedTranslationStageExperimentKwargs(TranslationStageExperimentKwargs, PolarisationFilterExperimentKwargs):
+    pass
+
 class PolarisedTranslationStageExperiment(
     PolarisationFilterExperiment, TranslationStageExperiment
 ):
-    def __init__(self, **kwargs):
-        N_x = len(kwargs.get("x", []))
-        N_pol = 2
+    def __init__(self, **kwargs: Unpack[PolarisedTranslationStageExperimentKwargs]):
+        n_x = len(kwargs["x"])
 
-        # Make sure there are N_x * N_pol configurations.
-        # If there are just N_x configurations, repeat each N_pol times.
+        # Make sure there are n_x * N_pol (2) configurations.
+        # If there are just n_x configurations, repeat each N_pol (2) times.
 
-        if len(kwargs.get("N_frames", [])) == N_x:
-            kwargs["N_frames"] = [n for n in kwargs["N_frames"] for _ in range(N_pol)]
-        assert (
-            len(kwargs.get("N_frames", [])) == N_x * N_pol
-        ), "N_frames should have length N_x * N_pol"
+        if len(kwargs["n_frames"]) == n_x:
+            kwargs["n_frames"] = [n for n in kwargs["n_frames"] for _ in range(2)]
 
         super().__init__(**kwargs)
-        # TranslationStageExperiment.__init__(self, x, **kwargs)
-        # PolarisationFilterExperiment.__init__(
-        #     self, alpha_ver=alpha_ver, alpha_hor=alpha_hor, **kwargs
-        # )
 
-    def get_config_names(self) -> List[str]:
-        config_names_translation = TranslationStageExperiment.get_config_names(self)
-        config_names_polarisation = PolarisationFilterExperiment.get_config_names(self)
-        print(config_names_polarisation, config_names_translation)
-        return [
-            f"{cn_t}_{cn_p}"
-            for cn_t in config_names_translation
-            for cn_p in config_names_polarisation
-        ]
+        if type(self) is PolarisationFilterExperiment:
+            self.check_N_frames(2*len(self.x), " Two configurations for each translation position (one for each polarization).")
 
     def make_labctl_header(self):
         return super().make_labctl_header()
@@ -46,7 +36,7 @@ class PolarisedTranslationStageExperiment(
         super(PolarisationFilterExperiment, self).prepare_experiment(cmds)
 
     def prepare_config(self, cmds, i):
-        super(TranslationStageExperiment, self).prepare_config(cmds, i)
+        super(TranslationStageExperiment, self).prepare_config(cmds, i // 2)
         super(PolarisationFilterExperiment, self).prepare_config(cmds, i % 2)
 
     def shutdown_experiment(self):
@@ -58,4 +48,6 @@ class PolarisedTranslationStageExperiment(
         dict2 = super(PolarisationFilterExperiment, self).make_postprocessing_info()
         total_dict = dict1.update(dict2)
         total_dict['variable'] = ["translation_loc", "alpha"]
+        total_dict['alpha'] = total_dict['alpha']*len(total_dict['translation_loc'])
+        total_dict['translation_loc'] = [x for x in total_dict['translation_loc'] for _ in range(2)]
         return total_dict
