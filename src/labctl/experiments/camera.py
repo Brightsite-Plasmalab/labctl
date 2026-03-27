@@ -173,10 +173,10 @@ class CameraExperiment(BaseExperiment):
         """Get the camera delay for a specific configuration, frame, and version."""
         if version == 0 or version == "foreground":
             # foreground
-            return self.camera_delay_optimum
+            return self.get_camera_delay_foreground(config)
         elif version == 1 or version == "background":
             # background
-            return self.get_camera_delay_background()
+            return self.get_camera_delay_background(config)
         else:
             msg = f"Unknown version, should be 0/1 or 'foreground'/'background', got {version}"
             raise ValueError(msg)
