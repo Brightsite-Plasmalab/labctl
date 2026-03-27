@@ -21,3 +21,6 @@ class DeviceBase:
             commands: The commands to be appended.
         """
         self.parent.append(commands, device=self)
+
+    def __str__(self) -> str:
+        return f"{self.__class__.__name__}"

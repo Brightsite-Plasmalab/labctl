@@ -12,8 +12,9 @@ class TranslationStageExperimentKwargs(CameraExperimentKwargs):
 class TranslationStageExperiment(CameraExperiment):
     translationstage: PiTranslationStage
 
-    def __init__(self, x: list[float], **kwargs: Unpack[CameraExperimentKwargs]):
+    def __init__(self, x: list[float] = None, **kwargs: Unpack[CameraExperimentKwargs]):
         self.x = x
+        assert x is not None, "x must be provided as a keyword argument"
         super().__init__(**kwargs)
         self.check_N_frames(len(self.x))
 
@@ -49,8 +50,10 @@ class TranslationStageExperiment(CameraExperiment):
 
     def make_postprocessing_info(self):
         info = super().make_postprocessing_info()
-        info.update({
-            "variable": "translation_loc",
-            "translation_loc": self.x,
-        })
+        info.update(
+            {
+                "variable": "translation_loc",
+                "translation_loc": self.x,
+            }
+        )
         return info

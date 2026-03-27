@@ -12,7 +12,15 @@ class PolarisationFilterExperimentKwargs(CameraExperimentKwargs):
 class PolarisationFilterExperiment(CameraExperiment):
     rotationstage: ThorlabsRotationStageCmds
 
-    def __init__(self, alpha_ver: float, alpha_hor: float = None, **kwargs: Unpack[CameraExperimentKwargs]):
+    def __init__(
+        self,
+        alpha_ver: float = None,
+        alpha_hor: float = None,
+        **kwargs: Unpack[CameraExperimentKwargs],
+    ):
+        assert (
+            self.alpha_ver is not None
+        ), "alpha_ver must be provided as a keyword argument"
         self.alpha_ver = alpha_ver
         if alpha_hor is None:
             alpha_hor = alpha_ver + 90.0
@@ -47,10 +55,12 @@ class PolarisationFilterExperiment(CameraExperiment):
 
     def make_postprocessing_info(self):
         info = super().make_postprocessing_info()
-        info.update({
-            "variable": "alpha",
-            "alpha_ver": self.alpha_ver,
-            "alpha_hor": self.alpha_hor,
-            "alpha": [self.alpha_ver, self.alpha_hor],
-        })
+        info.update(
+            {
+                "variable": "alpha",
+                "alpha_ver": self.alpha_ver,
+                "alpha_hor": self.alpha_hor,
+                "alpha": [self.alpha_ver, self.alpha_hor],
+            }
+        )
         return info
