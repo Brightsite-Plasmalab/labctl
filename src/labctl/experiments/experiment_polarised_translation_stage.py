@@ -1,8 +1,8 @@
 from typing_extensions import List
 from labctl.devices import PiTranslationStage
 from labctl.script import Script
-from labctl.experiments.experiment_polarisation import PolarisationFilterExperiment
-from labctl.experiments.experiment_translation_stage import TranslationStageExperiment
+from labctl.experiments.polarisation import PolarisationFilterExperiment
+from labctl.experiments.translation_stage import TranslationStageExperiment
 
 
 class PolarisedTranslationStageExperiment(

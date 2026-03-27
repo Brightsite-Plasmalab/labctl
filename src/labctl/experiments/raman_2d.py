@@ -39,3 +39,7 @@ class Raman2DExperiment(CameraExperiment):
             "filters": self.filters,
         })
         return info
+
+
+    def make_postprocessing_script(self) -> str:
+        pass
