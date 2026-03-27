@@ -68,6 +68,7 @@ class BackgroundConfiguration(enum.IntEnum):
         return (np.asarray(names) == "background").nonzero()[0].astype(int)
 
 
+# TODO: Also set other setting for channel C, like burst
 class CameraExperimentKwargs(BaseExperimentKwargs):
     n_frames: list[int] | int
     t_exposure: float
