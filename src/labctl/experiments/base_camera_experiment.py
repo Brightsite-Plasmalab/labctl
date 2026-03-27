@@ -253,7 +253,7 @@ class BaseCameraExperiment(Experiment):
             return sig_data, bg_data, sig_data_avg - bg_data_avg
 
         # Load sif file
-        data = Spectrum.from_file(f_data)
+        data = Spectrum.from_file(f_data, new_axes=True)
         data._axis_lambda = 0
 
         # Postprocess all configs
