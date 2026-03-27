@@ -189,7 +189,9 @@ class CameraExperiment(BaseExperiment):
 
     def perform_measurement(self, cmds: Script, iteration, config, frame, version):
         """Perform a single measurement."""
-        cmds.append(f"# Acquiring: config {config+1:d}/{len(self.n_frames):d}, {version} ({frame + 1:d}/{self.n_frames[config]:d}), iteration {iteration + 1:d}/{self.n_iter:d}")
+        num_meas = self.background_every.measurement_count(self.n_frames[config])
+        cmds.append(f"# Acquiring: config {config+1:d}/{len(self.n_frames):d}, {version} ({frame + 1:d}/{num_meas:d}), "
+                    f"iteration {iteration + 1:d}/{self.n_iter:d}")
         # Get the camera delay for this version (foreground/background)
         cameradelay = self.get_camera_delay(config, version)
         self.pdg.delay(self.camera_channel, cameradelay)
