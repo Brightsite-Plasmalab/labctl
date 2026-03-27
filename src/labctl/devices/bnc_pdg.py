@@ -35,6 +35,8 @@ class BncPdgCmds(DeviceBase):
                 raise ValueError(
                     f"Invalid channel {channel}, should be in [1, 2, ..., 8]"
                 )
+        else:
+            raise ValueError(f"Expected int or str, got {type(channel).__name__}")
 
     def delay(self, channel, delay):
         channel = self.verify_channel(channel)
