@@ -13,4 +13,6 @@ class MetaCommands(ScriptBase):
         self.total_wait += milliseconds
 
     def comment(self, comment):
+        if not comment.startswith("# "):
+            comment = "# " + comment
         self.append(comment)
