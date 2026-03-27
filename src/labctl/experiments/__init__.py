@@ -11,5 +11,6 @@ from labctl.experiments.base import BaseExperiment
 from labctl.experiments.polarised_translation_stage import (
     PolarisedTranslationStageExperiment,
 )
+from labctl.experiments.simple import SimpleCameraExperiment
 
 from labctl.experiments.camera_timesweep import CameraTimesweepExperiment

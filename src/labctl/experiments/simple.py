@@ -2,7 +2,7 @@ from labctl.experiments.camera import BackgroundConfiguration, CameraExperiment
 from typing_extensions import List, override
 
 
-class SimpleExperiment(CameraExperiment):
+class SimpleCameraExperiment(CameraExperiment):
     @override
     def get_config_names(self) -> List[str]:
         # Only one configuration
