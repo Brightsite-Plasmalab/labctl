@@ -20,8 +20,11 @@ class BackgroundConfiguration(enum.IntEnum):
     BEGIN_END = -4
 
     def make_name_list(self, foreground_num: int) -> list[str]:
-        if foreground_num < 1:
-            raise ValueError(f"`foreground_num` must be at least 1, got {foreground_num}")
+        assert (
+            foreground_num >= 0
+        ), f"foreground_num must be at least 1, got {foreground_num}"
+        if foreground_num == 0:
+            return []
 
         if self > 0:
             list_out = []
