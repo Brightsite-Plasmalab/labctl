@@ -57,6 +57,7 @@ class BackgroundConfiguration(enum.IntEnum):
         return len(names)
 
 
+# TODO: Also set other setting for channel C, like burst
 class CameraExperimentKwargs(BaseExperimentKwargs):
     n_frames: list[int] | int
     t_exposure: float
