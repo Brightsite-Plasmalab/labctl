@@ -14,12 +14,25 @@ class MetaCommands(ScriptBase):
     total_wait = 0
 
     def pause(self, milliseconds) -> Self:
+        """
+        Pause the execution of the script for a certain number of milliseconds.
+        """
         self += f"#WAIT {milliseconds:.0f}"
         self.total_wait += milliseconds
         return self
 
     def comment(self, comment) -> Self:
+        """
+        Add a comment to the script, which is printed in the terminal when the script is executed.
+        """
         self += comment
+        return self
+
+    def test(self, test_command, result):
+        """
+        Add a test command to the script, which is sent to a serial device and compared to the expected result.
+        """
+        self += f"#TEST {test_command} == {result}"
         return self
 
 
@@ -66,6 +79,8 @@ class DeviceCommands(ScriptBase):
 
         print(f"Registering device {device.__class__.__name__} on channel {channel}")
         self.devices[device] = channel
+
+        return channel
 
     def get_device_channel(self, device):
         if device not in self.devices:
