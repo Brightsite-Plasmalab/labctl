@@ -1,4 +1,4 @@
-#TODO: Is there a way to stop the BNC pulsing for the camera when stopping file execution?
+# TODO: Is there a way to stop the BNC pulsing for the camera when stopping file execution?
 
 import sys
 import time
@@ -16,7 +16,7 @@ import minimale_widget_st_multi
 class ExampleApp(QtWidgets.QMainWindow, minimale_widget_st_multi.Ui_MainWindow):
     counter = pyqtSignal(str)
     addline = pyqtSignal(str)
-    execBNC_btn_changeText = pyqtSignal(str)
+    execLabctlScript_btn_changeText = pyqtSignal(str)
     update_statusbar = pyqtSignal(str)
     timeToEnd = threading.Event()
     ESEGUI = pyqtSignal(str)
@@ -39,40 +39,47 @@ class ExampleApp(QtWidgets.QMainWindow, minimale_widget_st_multi.Ui_MainWindow):
 
         self.add_ports()
 
-        self.execBNC_btn.clicked.connect(self.execBNC)
-        self.cmdPath_lE.returnPressed.connect(self.execBNC)
+        self.execLabctlScript_btn.clicked.connect(self.execLabctlScript)
+        self.cmdPath_lE.returnPressed.connect(self.execLabctlScript)
 
         self.update_list_btn.clicked.connect(self.add_ports)
-        self.init_btn.clicked.connect(self.serial_connect_bnc)
-        self.init_btn_stage.clicked.connect(self.serial_connect_stage)
+        self.init_btn.clicked.connect(self.serial_connect_0)
+        self.init_btn_1.clicked.connect(self.serial_connect_1)
+        self.init_btn_2.clicked.connect(self.serial_connect_2)
         self.move_btn.clicked.connect(self.send_move_request)
         self.stop_btn.clicked.connect(self.send_stop_request)
-        self.send_btn.clicked.connect(self.write_data)
-        self.cmd_bnc.returnPressed.connect(self.write_data)
+        self.send_btn_0.clicked.connect(self.write_data)
+        self.cmd_0.returnPressed.connect(self.write_data)
 
-        self.send_btn_stage.clicked.connect(self.write_data_stage)
-        self.cmd_stage.returnPressed.connect(self.write_data_stage)
+        self.send_btn_1.clicked.connect(self.write_data_1)
+        self.cmd_1.returnPressed.connect(self.write_data_1)
+
+        self.send_btn_2.clicked.connect(self.write_data_2)
+        self.cmd_2.returnPressed.connect(self.write_data_2)
 
         self.addline.connect(self.log_TE.append)
-        self.execBNC_btn_changeText.connect(self.execBNC_btn.setText)
+        self.execLabctlScript_btn_changeText.connect(self.execLabctlScript_btn.setText)
         self.update_statusbar.connect(self._statusbar_message)
 
         self.counter.connect(self.send_btn.setText)
-                
-        self._listening: list[bool] = [False, False]  # TODO: implement some correct shared state between threads
-        self._threads: list[threading.Thread | None] = [None, None]
-        self._serial_conns: list[serial.Serial | None] = [None, None]
+
+        self._listening: list[bool] = [
+            False,
+            False,
+            False,
+        ]  # TODO: implement some correct shared state between threads
+        self._threads: list[threading.Thread | None] = [None, None, None]
+        self._serial_conns: list[serial.Serial | None] = [None, None, None]
 
     def close_connection(self):
-        self._listening = [False, False]
+        self._listening = [False, False, False]
         for thread in self._threads:
             if thread is not None:
                 thread.join()
         for conn in self._serial_conns:
             if conn is not None:
                 conn.close()
-        self._serial_conns = [None, None]
-
+        self._serial_conns = [None, None, None]
 
     def color(self, text, color):
         return '<span style=" font-size:8pt; font-weight:600; color:#{};" >{}</span>'.format(
@@ -85,7 +92,7 @@ class ExampleApp(QtWidgets.QMainWindow, minimale_widget_st_multi.Ui_MainWindow):
             "About",
             "Tool for simplifying the communication with BNCs delay generators\nThuwal\nDDCB 2019",
         )
-    
+
     def _statusbar_message(self, message: str, error: bool = False):
         if error:
             self.statusbar.setStyleSheet(
@@ -102,10 +109,16 @@ class ExampleApp(QtWidgets.QMainWindow, minimale_widget_st_multi.Ui_MainWindow):
         if self._serial_conns[index] is not None:
             self._serial_conns[index].close()
 
-        used_coms = [conn.port for i, conn in enumerate(self._serial_conns) if conn is not None and conn.is_open]
+        used_coms = [
+            conn.port
+            for i, conn in enumerate(self._serial_conns)
+            if conn is not None and conn.is_open
+        ]
 
         if port in used_coms:
-            self._statusbar_message(f'"{port}" already in use. Please select another port.', True)
+            self._statusbar_message(
+                f'"{port}" already in use. Please select another port.', True
+            )
             return
 
         self._serial_conns[index] = serial.Serial(
@@ -114,43 +127,53 @@ class ExampleApp(QtWidgets.QMainWindow, minimale_widget_st_multi.Ui_MainWindow):
             timeout=0.1,
         )
         print(self._serial_conns[index])
-        self._statusbar_message(
-            "Just connected to {}...".format(port)
-        )
+        self._statusbar_message("Just connected to {}...".format(port))
         self._listening[index] = True
         self._threads[index] = threading.Thread(target=run_func)
         self._threads[index].start()
 
-    def serial_connect_bnc(self):
+    def serial_connect_0(self):
         self._serial_connect(
             0,
             self.port_cB.currentText(),
             int(self.baudrate_cB.currentText()),
-            self.retrieve_data_bnc,
+            self.retrieve_data_0,
         )
         # enable few other pushbuttons
         self.move_btn.setEnabled(True)
         self.stop_btn.setEnabled(True)
-        self.send_btn.setEnabled(True)
-        self.execBNC_btn.setEnabled(True)
+        self.send_btn_0.setEnabled(True)
+        self.execLabctlScript_btn.setEnabled(True)
 
-    def serial_connect_stage(self):
+    def serial_connect_1(self):
         self._serial_connect(
             1,
-            self.port_cB_stage.currentText(),
-            int(self.baudrate_cB_stage.currentText()),
-            self.retrieve_data_stage,
+            self.port_cB_1.currentText(),
+            int(self.baudrate_cB_1.currentText()),
+            self.retrieve_data_1,
         )
         # enable few other pushbuttons
-        self.send_btn_stage.setEnabled(True)
+        self.send_btn_1.setEnabled(True)
+
+    def serial_connect_2(self):
+        self._serial_connect(
+            2,
+            self.port_cB_2.currentText(),
+            int(self.baudrate_cB_2.currentText()),
+            self.retrieve_data_2,
+        )
+        # enable few other pushbuttons
+        self.send_btn_2.setEnabled(True)
 
     def add_ports(self):
         for n in range(8):
             self.port_cB.removeItem(0)
-            self.port_cB_stage.removeItem(0)
+            self.port_cB_1.removeItem(0)
+            self.port_cB_2.removeItem(0)
         for n, (port, desc, hwid) in enumerate(sorted(comports()), 1):
             self.port_cB.addItem(port)
-            self.port_cB_stage.addItem(port)
+            self.port_cB_1.addItem(port)
+            self.port_cB_2.addItem(port)
 
     def _write_data(self, commands, serial_conn, color, name):
         for line in commands.text().split("#")[0].split("|"):
@@ -164,24 +187,27 @@ class ExampleApp(QtWidgets.QMainWindow, minimale_widget_st_multi.Ui_MainWindow):
             )
 
     def write_data(self):
-        self._write_data(self.cmd_bnc, self._serial_conns[0], "ff0000", "BNC")
+        self._write_data(self.cmd_0, self._serial_conns[0], "ff0000", "0")
 
-    def write_data_stage(self):
-        self._write_data(self.cmd_stage, self._serial_conns[1], "cccc00", "stage")
+    def write_data_1(self):
+        self._write_data(self.cmd_1, self._serial_conns[1], "cccc00", "1")
 
-    def execBNC(self):
-        self.selser = 0  # reselects bnc as the first recipient of the script
+    def write_data_2(self):
+        self._write_data(self.cmd_2, self._serial_conns[2], "0000ff", "2")
+
+    def execLabctlScript(self):
+        self.selser = 0  # Select serial port 0 by default. If scripts need other serial ports, they should use metacommands to select them.
         self.filename = self.cmdPath_lE.text()
         self.filename = str(self.filename).replace("file:///", "")
 
         if not self.scriptmode_active:
             self.scriptmode_active = True
-            self.execBNC_btn.setText("Stop executing commands form file")
+            self.execLabctlScript_btn.setText("Stop executing commands from file")
             thread2 = threading.Thread(target=self.start_execution_list)
             thread2.start()
         else:
             self.scriptmode_active = False
-            self.execBNC_btn.setText("Start executing commands form file")
+            self.execLabctlScript_btn.setText("Start executing commands from file")
 
     def start_execution_list(self):
         # open file
@@ -201,7 +227,9 @@ class ExampleApp(QtWidgets.QMainWindow, minimale_widget_st_multi.Ui_MainWindow):
         def log_format_line(command, color):
             nonlocal linenumber
             timestamp = time.strftime("%H:%M:%S", time.localtime())
-            self.addline.emit(self.color(f"{timestamp} | Line {linenumber}: {command}", color))
+            self.addline.emit(
+                self.color(f"{timestamp} | Line {linenumber}: {command}", color)
+            )
 
         while len(self.cmdlist) != 0:
             if self.timeToEnd.is_set():
@@ -234,8 +262,10 @@ class ExampleApp(QtWidgets.QMainWindow, minimale_widget_st_multi.Ui_MainWindow):
             # Meta command: select a specified serial port
             if command.startswith("#SELSER"):
                 self.selser = int(command[7:].strip())
-                if self.selser not in (0, 1):
-                    self._statusbar_message(f"Tried to select invalid serial port! COM {self.selser}", True)
+                if self.selser not in (0, 1, 2):
+                    self._statusbar_message(
+                        f"Tried to select invalid serial port! COM {self.selser}", True
+                    )
                     return
 
                 log_format_line("Selected serial port {}".format(self.selser), "ff00ff")
@@ -243,15 +273,25 @@ class ExampleApp(QtWidgets.QMainWindow, minimale_widget_st_multi.Ui_MainWindow):
 
             # Everything else is real serial commands
             # here there should be the check on which serial port to send the information
-            color = "ff0000" if self.selser == 0 else "cccc00"
+            if self.selser == 0:
+                color = "ff0000"
+            elif self.selser == 1:
+                color = "cccc00"
+            else:
+                color = "0000ff"
             message = "{}\r\n".format(command)
             self._serial_conns[self.selser].write(message.encode("ascii"))
-            log_format_line(message, color,)
+            log_format_line(
+                message,
+                color,
+            )
             time.sleep(self.delayCmdSubmission)
 
             if len(self.cmdlist) == 0:
                 self.scriptmode_active = False
-                self.execBNC_btn_changeText.emit("Start executing commands form file")
+                self.execLabctlScript_btn_changeText.emit(
+                    "Start executing commands form file"
+                )
                 log_format_line("LOG: Completed command list! Stopping now", "000000")
 
             if not sendAll:
@@ -275,15 +315,21 @@ class ExampleApp(QtWidgets.QMainWindow, minimale_widget_st_multi.Ui_MainWindow):
                 message = message[:-2]
             self.addline.emit(self.color(message.decode(), color))
 
-    def retrieve_data_bnc(self):
+    def retrieve_data_0(self):
         while self._listening[0]:
             self._retrieve_data(self._serial_conns[0], "00ff00")
             if self.timeToEnd.is_set():
                 break
 
-    def retrieve_data_stage(self):
-        while self.listening_stage:
+    def retrieve_data_1(self):
+        while self._listening[1]:
             self._retrieve_data(self._serial_conns[1], "00cccc")
+            if self.timeToEnd.is_set():
+                break
+
+    def retrieve_data_2(self):
+        while self._listening[2]:
+            self._retrieve_data(self._serial_conns[2], "0000ff")
             if self.timeToEnd.is_set():
                 break
 
