@@ -3,11 +3,11 @@ from typing_extensions import List, cast, Tuple
 import numpy as np
 from labctl.script import Script
 from labctl.devices import BncPdgCmds
-from labctl.experiments.experiment import Experiment
+from labctl.experiments.base import BaseExperiment
 from abc import abstractmethod
 
 
-class BaseCameraExperiment(Experiment):
+class BaseCameraExperiment(BaseExperiment):
     """
     This experiment takes a series of images with a camera.
     - Changes some experimental configuration.
