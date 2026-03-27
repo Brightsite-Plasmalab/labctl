@@ -11,6 +11,8 @@ class PolarisationFilterExperimentKwargs(CameraExperimentKwargs):
 
 class PolarisationFilterExperiment(CameraExperiment):
     rotationstage: ThorlabsRotationStageCmds
+    alpha_ver: float
+    alpha_hor: float
 
     def __init__(
         self,
@@ -18,9 +20,7 @@ class PolarisationFilterExperiment(CameraExperiment):
         alpha_hor: float = None,
         **kwargs: Unpack[CameraExperimentKwargs],
     ):
-        assert (
-            self.alpha_ver is not None
-        ), "alpha_ver must be provided as a keyword argument"
+        assert alpha_ver is not None, "alpha_ver must be provided as a keyword argument"
         self.alpha_ver = alpha_ver
         if alpha_hor is None:
             alpha_hor = alpha_ver + 90.0
