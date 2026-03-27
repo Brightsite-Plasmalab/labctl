@@ -24,14 +24,11 @@ class TemplateExperiment(CameraExperiment):
         pass
 
     # TODO change to new get_camera_delay_background and get_camera_delay_foreground
-    def get_camera_delay(self, config, version):
-        """Get the camera delay for a specific configuration, frame, and version."""
-        if version in (0, "foreground"):
-            # foreground
-            return self.camera_delay_optimum
-        elif version in (1, "background"):
-            # background
-            return self.camera_delay_background
+    def get_camera_delay_foreground(self, config):
+        pass
+
+    def get_camera_delay_background(self, config):
+        pass
 
     def shutdown_experiment(self):
         """Shutdown the experiment. Inherit this method to add more commands."""
