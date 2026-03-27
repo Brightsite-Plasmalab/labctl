@@ -5,6 +5,9 @@ from labctl.experiments.experiment_laser_timesweep import LaserTimesweepExperime
 from labctl.experiments.experiment_polarisation_calibration import (
     PolarisationFilterCalibrationExperiment,
 )
+from labctl.experiments.experiment_polarised_translation_stage import (
+    PolarisedTranslationStageExperiment,
+)
 from labctl.experiments.experiment_pulsed_microwave import LaserPulsedMicrowaveTimesweep
 from labctl.experiments.experiment_polarisation import PolarisationFilterExperiment
 from labctl.experiments.experiment import Experiment

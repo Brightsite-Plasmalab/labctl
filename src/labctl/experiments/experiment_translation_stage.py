@@ -8,7 +8,8 @@ class TranslationStageExperiment(BaseCameraExperiment):
     x: list[float]
     translationstage: PiTranslationStage
 
-    def __init__(self, x, **kwargs):
+    def __init__(self, x=None, **kwargs):
+        assert x is not None, "x must be provided as a keyword argument"
         self.x = x
         super().__init__(**kwargs)
 

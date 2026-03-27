@@ -9,9 +9,15 @@ class PolarisationFilterExperiment(BaseCameraExperiment):
     alpha_hor: float
     rotationstage: ThorlabsRotationStageCmds
 
-    def __init__(self, alpha_ver, alpha_hor, **kwargs):
+    def __init__(self, alpha_ver=None, alpha_hor=None, **kwargs):
         self.alpha_ver = alpha_ver
         self.alpha_hor = alpha_hor
+        assert (
+            self.alpha_ver is not None
+        ), "alpha_ver must be provided as a keyword argument"
+        assert (
+            self.alpha_hor is not None
+        ), "alpha_hor must be provided as a keyword argument"
         super().__init__(**kwargs)
 
     def get_config_names(self) -> List[str]:
