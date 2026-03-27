@@ -217,7 +217,9 @@ class CameraExperiment(BaseExperiment):
         self.pdg.arm()
 
         # Wait for the camera to finish
-        cmds.pause((self.t_exposure + self.camera_reset_time) * 1e3)
+        cmds.pause(self.t_exposure * 1e3)
+        cmds.comment("# Wait for the camera to reset")
+        cmds.pause(self.camera_reset_time * 1e3)
 
     def shutdown_experiment(self):
         """Shutdown the experiment. Inherit this method to add more commands."""
