@@ -310,6 +310,9 @@ class CameraExperiment(BaseExperiment):
         }
         return info_obj
 
+    def prepare_config(self, cmds, i):
+        pass
+
     # @staticmethod
     # def postprocess(f_data, f_pickle=None, info=None) -> dict[str, tuple[np.ndarray, np.ndarray, np.ndarray]]:
     #     import pickle as pkl
