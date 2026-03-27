@@ -54,7 +54,8 @@ class PolarisedTranslationStageExperiment(
         super(PolarisationFilterExperiment, self).shutdown_experiment()
 
     def make_postprocessing_info(self):
-        return {
-            **super(TranslationStageExperiment, self).make_postprocessing_info(),
-            **super(PolarisationFilterExperiment, self).make_postprocessing_info(),
-        }
+        dict1 = super(TranslationStageExperiment, self).make_postprocessing_info()
+        dict2 = super(PolarisationFilterExperiment, self).make_postprocessing_info()
+        total_dict = dict1.update(dict2)
+        total_dict['variable'] = ["translation_loc", "alpha"]
+        return total_dict
