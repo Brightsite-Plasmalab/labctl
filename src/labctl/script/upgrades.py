@@ -74,10 +74,10 @@ class DeviceCommands(ScriptBase):
             )
         if channel in self.devices.values():
             raise Exception(
-                f"Channel {channel} is already occupied by device {self.get_device_by_channel(channel).__class__.__name__}"
+                f"Channel {channel} is already occupied by device {self.get_device_by_channel(channel)}"
             )
 
-        print(f"Registering device {device.__class__.__name__} on channel {channel}")
+        print(f"Registering device {device} on channel {channel}")
         self.devices[device] = channel
 
         return channel
