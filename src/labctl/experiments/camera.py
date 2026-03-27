@@ -59,6 +59,14 @@ class BackgroundConfiguration(enum.IntEnum):
         names = self.make_name_list(foreground_num)
         return len(names)
 
+    def index_foreground(self, foreground_num) -> list[int]:
+        names = self.make_name_list(foreground_num)
+        return (np.asarray(names) == "foreground").nonzero()[0]
+
+    def index_background(self, foreground_num) -> list[int]:
+        names = self.make_name_list(foreground_num)
+        return (np.asarray(names) == "background").nonzero()[0]
+
 
 class CameraExperimentKwargs(BaseExperimentKwargs):
     n_frames: list[int] | int
@@ -105,9 +113,11 @@ class CameraExperiment(BaseExperiment):
     -----
     When inheriting from this class, the following methods should be implemented:
     - prepare_config: to set the experimental configuration for each measurement.
+    - get_config_names: to return the human-readable names of the configurations.
 
     In addition, your __init__ method should check whether N_frames is a list of integers, with the correct length.
     """
+
     pdg: BncPdgCmds
 
     def __init__(
@@ -120,13 +130,17 @@ class CameraExperiment(BaseExperiment):
         n_iter: int = 1,
         laser_frequency: int = 30,
         camera_channel: str = "C",
-        background_every: BackgroundConfiguration | int = BackgroundConfiguration.EVERY_FRAME,
+        background_every: (
+            BackgroundConfiguration | int
+        ) = BackgroundConfiguration.EVERY_FRAME,
         camera_reset_time: float = 0.5,
         **kwargs: Unpack[BaseExperimentKwargs],
     ):
         self.n_iter = n_iter
         if self.n_iter > 1:
-            msg = f"`n_iter` bigger than 1 can cause problems for the standard analysis."
+            msg = (
+                f"`n_iter` bigger than 1 can cause problems for the standard analysis."
+            )
             warnings.warn(msg)
 
         self.n_frames = n_frames
@@ -143,7 +157,6 @@ class CameraExperiment(BaseExperiment):
         super().__init__(**kwargs)
         self.n_frames: list[int]
 
-
     def check_N_frames(self, expected_length: int, config_explanation):
         """Check that n_frames has the expected length."""
         if isinstance(self.n_frames, int):
@@ -151,10 +164,11 @@ class CameraExperiment(BaseExperiment):
         if not hasattr(self.n_frames, "__len__"):
             raise TypeError("`N_frames` must be an integer or a collection of integers")
         if len(self.n_frames) != expected_length:
-            msg = ("Length of `N_frames` must match the number of configurations "
-                   f"({len(self.n_frames)} != {expected_length}).{config_explanation}")
+            msg = (
+                "Length of `N_frames` must match the number of configurations "
+                f"({len(self.n_frames)} != {expected_length}).{config_explanation}"
+            )
             raise ValueError(msg)
-
 
     def make_labctl_header(self) -> Script:
         """Make the labctl header for the experiment. Inherit this method to add more devices."""
@@ -175,10 +189,10 @@ class CameraExperiment(BaseExperiment):
         """Get the camera delay for a specific configuration, frame, and version."""
         if version == 0 or version == "foreground":
             # foreground
-            return self.camera_delay_optimum
+            return self.get_camera_delay_foreground(config)
         elif version == 1 or version == "background":
             # background
-            return self.get_camera_delay_background()
+            return self.get_camera_delay_background(config)
         else:
             msg = f"Unknown version, should be 0/1 or 'foreground'/'background', got {version}"
             raise ValueError(msg)
@@ -191,7 +205,9 @@ class CameraExperiment(BaseExperiment):
 
     def perform_measurement(self, cmds: Script, iteration, config, frame, version):
         """Perform a single measurement."""
-        cmds.append(f"# Acquiring: config {config+1:d}/{len(self.n_frames):d}, {version} ({frame + 1:d}/{self.n_frames[config]:d}), iteration {iteration + 1:d}/{self.n_iter:d}")
+        cmds.comment(
+            f"Acquiring: config {config+1:d}/{len(self.n_frames):d}, {version} ({frame + 1:d}/{self.n_frames[config]:d}), iteration {iteration + 1:d}/{self.n_iter:d}"
+        )
         # Get the camera delay for this version (foreground/background)
         cameradelay = self.get_camera_delay(config, version)
         self.pdg.delay(self.camera_channel, cameradelay)
@@ -220,7 +236,9 @@ class CameraExperiment(BaseExperiment):
         self.t_exposure = (N_accumulate - 0.5) * T_pulse
         print(f"Pulses per frame: {N_accumulate:.0f}")
 
-        cmds.append(f"# [N_iter, [N_reps]] = [{self.n_iter}, [{', '.join([str(x) for x in self.n_frames])}]]")
+        cmds.comment(
+            f"[N_iter, [N_reps]] = [{self.n_iter}, [{', '.join([str(x) for x in self.n_frames])}]]"
+        )
 
         ###################
         #     COMMANDS    #
@@ -233,7 +251,7 @@ class CameraExperiment(BaseExperiment):
 
         # Set Channel G (gate) settings
         # NB: This blocks the first pulse in a burst, which does not reflect new channel settings
-        cmds.append("# Channel G - gate")
+        cmds.comment("Channel G - gate")
         self.pdg.enable("G", True)  # Enable channel G
         self.pdg.delay("G", 0e-9)
         self.pdg.sync("G", "T0")
@@ -247,7 +265,7 @@ class CameraExperiment(BaseExperiment):
         for i in range(self.n_iter):
             # For every config ...
             for j, N_frames_j in enumerate(self.n_frames):
-                cmds.append(f"# Selecting config {j}")
+                cmds.comment(f"Selecting config {j}")
                 self.prepare_config(cmds, j)
 
                 # If we don't want to measure this config, skip to the next one
@@ -266,7 +284,12 @@ class CameraExperiment(BaseExperiment):
 
         # Write initialization file
         # cmds.print()
-        n_total = sum([self.background_every.measurement_count(n) * self.n_iter for n in self.n_frames])
+        n_total = sum(
+            [
+                self.background_every.measurement_count(n) * self.n_iter
+                for n in self.n_frames
+            ]
+        )
         comments = [
             f"Total wait: {cmds.total_wait/1e3/60:.1f}min",
             f"NB: Put the PDG in burst mode",
@@ -278,25 +301,75 @@ class CameraExperiment(BaseExperiment):
 
         for comment in comments:
             print(comment)
-            cmds.append("# " + comment)
+            cmds.comment(comment)
 
         return cmds
 
-    def make_postprocessing_info(self):
+    def get_config_indices(self):
+        """
+        Returns a list that maps the configurations to the indices of the foreground and background frames in the acquired data.
+        [ (fg_idx_config1, bg_idx_config1), (fg_idx_config2, bg_idx_config2), ... ],
+        """
         idx = []
         running_total = 0
-        for j, f in enumerate(self.n_frames):
-            names = self.background_every.make_name_list(f)
-            idx.append([(np.asarray(names) == "foreground").nonzero()[0] + running_total,
-                        (np.asarray(names) == "background").nonzero()[0] + running_total])
-            running_total += len(names)
-        frames_per_iter = sum(self.n_frames)
+        for i in range(self.n_iter):
+            for j, N_frames_j in enumerate(self.n_frames):
+                fg_idx = (
+                    self.background_every.index_foreground(N_frames_j) + running_total
+                )
+                bg_idx = (
+                    self.background_every.index_background(N_frames_j) + running_total
+                )
+                if i == 0:
+                    # On the first run, add a (fg, bg) tuple for each configuration
+                    idx.append((fg_idx, bg_idx))
+                else:
+                    # On subsequent runs, concatenate the new indices to the existing ones
+                    idx[j] = (
+                        np.concatenate((idx[j][0], fg_idx)),
+                        np.concatenate((idx[j][1], bg_idx)),
+                    )
+                running_total += len(fg_idx) + len(bg_idx)
 
-        # TODO: this is not correct, gives the same value within repeats
-        idx = [[(idxs[0] + i*frames_per_iter, idxs[1] + i*frames_per_iter) for idxs in idx] for i in range(self.n_iter)]
+        return idx
+
+    def get_config_index_dict(self):
+        """
+        Returns a dictionary that maps the config names to the indices of the foreground and background frames in the acquired data.
+        { config_name: (fg_idx_config_iter1, bg_idx_config_iter1), ... },
+        """
+        idx = self.get_config_indices()
+        config_names = self.get_config_names()
+
+        idx_dict = {}
+        for i, config_name in enumerate(config_names):
+            idx_dict[config_name] = {
+                "foreground": idx[i][0],
+                "background": idx[i][1],
+            }
+
+        return idx_dict
+
+    def make_postprocessing_info(self):
+        """
+        This function creates a dictionary with all necessary information about the experiment to do the postprocessing.
+        Most importantly, it creates a list of indices for the foreground and background frames for each config and iteration, which can be used to separate the data during postprocessing.
+        """
+
+        conf_idx_dict = self.get_config_index_dict()
 
         info_obj = {
-            "indices": idx,
+            "indices": self.get_config_indices(),
+            "configs": self.get_config_index_dict(),
+            # Backwards compatibility
+            **dict(
+                (f"{config}_sig", conf_idx_dict[config]["foreground"])
+                for config in conf_idx_dict
+            ),
+            **dict(
+                (f"{config}_bg", conf_idx_dict[config]["background"])
+                for config in conf_idx_dict
+            ),
             "n_iter": self.n_iter,
             "n_frames": self.n_frames,
             "t_exposure": self.t_exposure,
@@ -304,53 +377,55 @@ class CameraExperiment(BaseExperiment):
             "N_frames": self.n_frames,
             "T_exposure": self.t_exposure,
             "background_every": self.background_every.value,
-            **super().make_postprocessing_info()
+            **super().make_postprocessing_info(),
         }
         return info_obj
 
-    # @staticmethod
-    # def postprocess(f_data, f_pickle=None, info=None) -> dict[str, tuple[np.ndarray, np.ndarray, np.ndarray]]:
-    #     import pickle as pkl
-    #     from toddler.data.spectrum import Spectrum
-    #
-    #     if f_pickle is None:
-    #         f_pickle = f_data.with_stem(f_data.stem + "_idx").with_suffix(".pkl")
-    #
-    #     # Load pickle file
-    #     if info is None:
-    #         info = pkl.load(open(f_pickle, "rb"))
-    #
-    #     def get_data(data, info, config):
-    #         # Get the keys for the signal and background indices
-    #         sig_key = f"{config}_sig"
-    #         bg_key = f"{config}_bg"
-    #
-    #         if not sig_key in info:
-    #             return None, None
-    #
-    #         # Get the indices for the signal and background
-    #         sig_ind = info[sig_key]
-    #         bg_ind = info[bg_key]
-    #
-    #         # Get the data for the signal and background
-    #         sig_data = data[:, :, sig_ind[0]]
-    #         bg_data = data[:, :, bg_ind[0]]
-    #
-    #         sig_data_avg = sig_data.c.median(axis=2)
-    #         bg_data_avg = bg_data.c.median(axis=2)
-    #
-    #         return sig_data, bg_data, sig_data_avg - bg_data_avg
-    #
-    #     # Load sif file
-    #     data = Spectrum.from_file(f_data)
-    #     data._axis_lambda = 0
-    #
-    #     # Postprocess all configs
-    #     results = {}
-    #     for i, config in enumerate(info["configs"]):
-    #         results[config] = get_data(data, info, i)
-    #
-    #     return results
+    @staticmethod
+    def postprocess(
+        f_data, f_pickle=None, info=None
+    ) -> dict[str, tuple[np.ndarray, np.ndarray, np.ndarray]]:
+        import pickle as pkl
+        from toddler.data.spectrum import Spectrum
+
+        if f_pickle is None:
+            f_pickle = f_data.with_stem(f_data.stem + "_idx").with_suffix(".pkl")
+
+        # Load pickle file
+        if info is None:
+            info = pkl.load(open(f_pickle, "rb"))
+
+        def get_data(data, info, config):
+            # Get the keys for the signal and background indices
+            sig_key = f"{config}_sig"
+            bg_key = f"{config}_bg"
+
+            if not sig_key in info:
+                return None, None
+
+            # Get the indices for the signal and background
+            sig_ind = info[sig_key]
+            bg_ind = info[bg_key]
+
+            # Get the data for the signal and background
+            sig_data = data[:, :, sig_ind[0]]
+            bg_data = data[:, :, bg_ind[0]]
+
+            sig_data_avg = sig_data.c.median(axis=2)
+            bg_data_avg = bg_data.c.median(axis=2)
+
+            return sig_data, bg_data, sig_data_avg - bg_data_avg
+
+        # Load sif file
+        data = Spectrum.from_file(f_data, new_axes=True)
+        data._axis_lambda = 0
+
+        # Postprocess all configs
+        results = {}
+        for i, config in enumerate(info["configs"]):
+            results[config] = get_data(data, info, i)
+
+        return results
 
     def make_postprocessing_script(self):
         # TODO: Currently, this will not work! Maybe remove and bundle in package

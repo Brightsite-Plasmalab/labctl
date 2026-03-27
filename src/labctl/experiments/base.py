@@ -4,7 +4,7 @@ import pickle as pkl
 from typing import TypedDict
 from abc import ABC, abstractmethod
 
-from typing_extensions import NotRequired
+from typing_extensions import NotRequired, List
 
 
 class BaseExperimentKwargs(TypedDict):
@@ -29,12 +29,17 @@ class BaseExperiment(ABC):
 
     @abstractmethod
     def make_labctl_script(self):
-        pass
+        raise NotImplementedError("Subclasses must implement this method")
 
     @abstractmethod
     def prepare_config(self, cmds, i):
         """Prepares experimental configuration i."""
-        pass
+        raise NotImplementedError("Subclasses must implement this method")
+
+    @abstractmethod
+    def get_config_names(self) -> List[str]:
+        """Get the human-readable names of the configurations."""
+        raise NotImplementedError("Subclasses must implement this method")
 
     def make_postprocessing_info(self):
         info_obj = {
@@ -48,7 +53,7 @@ class BaseExperiment(ABC):
 
     @abstractmethod
     def make_postprocessing_script(self) -> str:
-        pass  # TODO: question, isn't bundling analysis into package easier/better?
+        raise NotImplementedError("Subclasses must implement this method")
 
     def save_labctl_script(self, dest=None):
         if dest is None:

@@ -1,4 +1,4 @@
-from typing_extensions import Unpack
+from typing_extensions import Unpack, List
 
 from labctl.devices import PiTranslationStage
 from labctl.script import Script
@@ -35,6 +35,9 @@ class TranslationStageExperiment(CameraExperiment):
         self.translationstage.set_reference_mode(1, mode="manual")
         self.translationstage.set_servo(1, enable=True)
         self.translationstage.set_position(1, position=0.0)
+
+    def get_config_names(self) -> List[str]:
+        return [f"x_{xi:.3f}mm".replace(".", "_") for xi in self.x]
 
     def prepare_config(self, cmds, i):
         super().prepare_config(cmds, i)

@@ -41,6 +41,9 @@ class PolarisationFilterExperiment(CameraExperiment):
 
         self.rotationstage.home()
 
+    def get_config_names(self) -> List[str]:
+        return ["ver", "hor"]
+
     def prepare_config(self, cmds, i):
         super().prepare_config(cmds, i)
 
