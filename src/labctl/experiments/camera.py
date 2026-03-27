@@ -68,7 +68,6 @@ class BackgroundConfiguration(enum.IntEnum):
         return (np.asarray(names) == "background").nonzero()[0].astype(int)
 
 
-# TODO: Also set other setting for channel C, like burst
 class CameraExperimentKwargs(BaseExperimentKwargs):
     n_frames: list[int] | int
     t_exposure: float
@@ -262,7 +261,11 @@ class CameraExperiment(BaseExperiment):
         # self.pdg.output("G", "ADJ", voltage=4)  # Output 4V
         self.pdg.polarity("G", "NORM")  # Normal polarity
         self.pdg.channel_mode("G", "SING")
+
+        # Setting for camera channel
         self.pdg.channel_gate(self.camera_channel, "LOW")
+        self.pdg.channel_mode(self.camera_channel, "BURS")
+        self.pdg.enable(self.camera_channel, True)
 
         # For every iteration of measurements ...
         for i in range(self.n_iter):
