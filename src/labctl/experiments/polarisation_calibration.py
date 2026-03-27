@@ -15,7 +15,8 @@ class PolarisationFilterCalibrationExperiment(CameraExperiment):
     def __init__(self, alpha: list[float], **kwargs: Unpack[CameraExperimentKwargs]):
         self.alpha = alpha
         super().__init__(**kwargs)
-        self.check_N_frames(len(self.alpha), " One configuration for each polarization.")
+        if type(self) is PolarisationFilterCalibrationExperiment:
+            self.check_N_frames(len(self.alpha), " One configuration for each polarization.")
 
     def make_labctl_header(self):
         cmds = super().make_labctl_header()

@@ -18,7 +18,8 @@ class PolarisationFilterExperiment(CameraExperiment):
             alpha_hor = alpha_ver + 90.0
         self.alpha_hor = alpha_hor
         super().__init__(**kwargs)
-        self.check_N_frames(2, " One configuration for each polarization.")
+        if type(self) is PolarisationFilterExperiment:
+            self.check_N_frames(2, " One configuration for each polarization.")
 
     def make_labctl_header(self):
         cmds = super().make_labctl_header()
