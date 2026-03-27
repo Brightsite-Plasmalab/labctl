@@ -20,7 +20,8 @@ class LaserTimesweepExperiment(CameraExperiment):
         self.t0 = t0
         self.delta_t = delta_t
         super().__init__(**kwargs)
-        self.check_N_frames(len(self.delta_t))
+        if type(self) is LaserTimesweepExperiment:
+            self.check_N_frames(len(self.delta_t))
 
     def prepare_config(self, cmds, i):
         cmds.comment(

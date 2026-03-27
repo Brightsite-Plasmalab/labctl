@@ -18,7 +18,8 @@ class CameraTimesweepExperiment(CameraExperiment):
         self.delta_t = delta_t
         super().__init__(**kwargs)
         expl = f" The number of configurations is the number of camera delays."
-        self.check_N_frames(len(self.delta_t), expl)
+        if type(self) is CameraTimesweepExperiment:
+            self.check_N_frames(len(self.delta_t), expl)
 
     def make_postprocessing_info(self):
         info = super().make_postprocessing_info()

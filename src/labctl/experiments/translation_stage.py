@@ -18,9 +18,8 @@ class TranslationStageExperiment(CameraExperiment):
             raise ValueError(msg)
         self.x = x
         super().__init__(**kwargs)
-        self.check_N_frames(
-            len(self.x), " One configuration for each translation stage position."
-        )
+        if type(self) == TranslationStageExperiment:
+            self.check_N_frames(len(self.x), " One configuration for each translation position.")
 
     def make_labctl_header(self):
         cmds = super().make_labctl_header()

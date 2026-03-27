@@ -14,7 +14,8 @@ class Raman2DExperiment(CameraExperiment):
     def __init__(self, filters: list[str], **kwargs: Unpack[CameraExperimentKwargs]):
         self.filters = filters
         super().__init__(**kwargs)
-        self.check_N_frames(len(self.filters), " One configuration for each filter.")
+        if type(self) is Raman2DExperiment:
+            self.check_N_frames(len(self.filters), " One configuration for each filter.")
 
     def prepare_config(self, cmds, i):
         cmds.comment(f"Selecting filter {i}")

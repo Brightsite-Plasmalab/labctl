@@ -11,6 +11,8 @@ class TemplateExperiment(CameraExperiment):
         **kwargs,
     ):
         super().__init__(**kwargs)
+        if type(self) is TemplateExperiment:
+            self.check_N_frames(len(self.configs), " One configuration for each element in configs.")
 
     def prepare_experiment(self, cmds: Script):
         """Prepare the experiment. Inherit this method to add more commands."""

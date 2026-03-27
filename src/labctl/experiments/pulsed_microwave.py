@@ -78,9 +78,8 @@ class PulsedMicrowaveTimesweep(CameraExperiment):
         print("\n")
 
         super().__init__(**kwargs, camera_delay_background=0)
-        self.check_N_frames(
-            len(self.delta_t), " One configuration for each time delay value."
-        )
+        if type(self) is PulsedMicrowaveTimesweep:
+            self.check_N_frames(len(self.delta_t), " One configuration for each time delay value.")
 
     def make_postprocessing_info(self):
         info = super().make_postprocessing_info()
