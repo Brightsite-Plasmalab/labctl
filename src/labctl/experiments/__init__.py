@@ -1,4 +1,4 @@
-from labctl.experiments.camera import CameraExperiment
+from labctl.experiments.camera import CameraExperiment, BackgroundConfiguration
 from labctl.experiments.translation_stage import TranslationStageExperiment
 from labctl.experiments.raman_2d import Raman2DExperiment
 from labctl.experiments.laser_Qswitch_timesweep import LaserTimesweepExperiment
