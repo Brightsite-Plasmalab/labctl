@@ -16,7 +16,9 @@ class TranslationStageExperiment(CameraExperiment):
         self.x = x
         assert x is not None, "x must be provided as a keyword argument"
         super().__init__(**kwargs)
-        self.check_N_frames(len(self.x))
+        self.check_N_frames(
+            len(self.x), " One configuration for each translation stage position."
+        )
 
     def make_labctl_header(self):
         cmds = super().make_labctl_header()
