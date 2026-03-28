@@ -1,3 +1,5 @@
+from typing import Collection
+
 from typing_extensions import Unpack
 
 import numpy as np
@@ -8,14 +10,18 @@ from labctl.experiments.camera import CameraExperiment, CameraExperimentKwargs
 
 
 class PolarisationFilterSweepExperimentKwargs(CameraExperimentKwargs):
-    alpha: list[float] | np.ndarray[tuple[int], np.dtype[np.floating | np.integer]]
+    alpha: Collection[float] | np.ndarray[tuple[int], np.dtype[np.floating | np.integer]]
 
 
 class PolarisationFilterSweepExperiment(CameraExperiment):
     rotationstage: ThorlabsRotationStageCmds
     alpha: list[float]
 
-    def __init__(self, alpha: list[float], **kwargs: Unpack[CameraExperimentKwargs]):
+    def __init__(
+            self,
+            alpha: Collection[float] | np.ndarray[tuple[int], np.dtype[np.floating | np.integer]],
+            **kwargs: Unpack[CameraExperimentKwargs]
+    ):
         self.alpha = alpha
         super().__init__(**kwargs)
         if type(self) is PolarisationFilterSweepExperiment:
