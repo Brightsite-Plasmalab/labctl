@@ -45,8 +45,6 @@ class PolarisationFilterExperiment(CameraExperiment):
         return ["ver", "hor"]
 
     def prepare_config(self, cmds, i):
-        super().prepare_config(cmds, i)
-
         if i == 0:
             alphai = self.alpha_ver
             cmds.comment(f"Selecting vertical rotation: {alphai:.3f} degrees")

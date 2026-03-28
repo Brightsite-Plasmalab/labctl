@@ -24,7 +24,7 @@ class TranslationStageExperiment(CameraExperiment):
         cmds = super().make_labctl_header()
 
         self.translationstage = PiTranslationStage(cmds)
-        cmds.register_device(self.translationstage, 1)
+        cmds.register_device(self.translationstage, 2)
 
         return cmds
 
@@ -42,7 +42,6 @@ class TranslationStageExperiment(CameraExperiment):
         return [f"x_{xi:.3f}mm".replace(".", "_") for xi in self.x]
 
     def prepare_config(self, cmds, i):
-        super().prepare_config(cmds, i)
         xi = self.x[i]
         cmds.comment(f"Selecting position {i}: {xi:.3f} mm")
         self.translationstage.move_to(axis=1, position=xi)

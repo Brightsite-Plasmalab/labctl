@@ -34,8 +34,8 @@ class PolarisedTranslationStageExperiment(
         ), "N_frames should have length N_x * N_pol"
 
     def prepare_config(self, cmds, i):
-        super(TranslationStageExperiment, self).prepare_config(cmds, i)
-        super(PolarisationFilterExperiment, self).prepare_config(cmds, i % 2)
+        TranslationStageExperiment.prepare_config(self, cmds, i // 2)
+        PolarisationFilterExperiment.prepare_config(self, cmds, i % 2)
 
     def shutdown_experiment(self):
         super(TranslationStageExperiment, self).shutdown_experiment()
