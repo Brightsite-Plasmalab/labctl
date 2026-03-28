@@ -14,6 +14,8 @@ from labctl.experiments.laser_Qswitch_timesweep import LaserTimesweepExperiment,
 from labctl.experiments.translation_stage import TranslationStageExperiment, TranslationStageExperimentKwargs
 from labctl.experiments.raman_2d import Raman2DExperiment, Raman2DExperimentKwargs
 from labctl.experiments.pulsed_microwave import PulsedMicrowaveTimesweep, PulsedMicrowaveTimesweepKwargs
+from labctl.experiments.experiment_polarised_translation_stage import (PolarisedTranslationStageExperiment,
+                                                                       PolarisedTranslationStageExperimentKwargs)
 
 
 
@@ -97,6 +99,7 @@ experiments_plus_kwargs = [
     (TranslationStageExperiment, TranslationStageExperimentKwargs),
     (Raman2DExperiment, Raman2DExperimentKwargs),
     (PulsedMicrowaveTimesweep, PulsedMicrowaveTimesweepKwargs),
+    (PolarisedTranslationStageExperiment, PolarisedTranslationStageExperimentKwargs),
 ]
 
 @pytest.mark.parametrize("test_class, test_typed_dict", experiments_plus_kwargs)
