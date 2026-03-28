@@ -11,11 +11,14 @@ def _get_data(data, info, indexer, frame_index: int, iter_index: int = 0):
     return np.squeeze(data[indexes, :, :])
 
 
-def _config_values(info):
+def _config_num(info):
     if "variable" in info:
-        return info[info["variable"]]
+        variable = info["variable"]
+        if not isinstance(variable, str):
+            variable = variable[0]
+        return len(info[variable])
     else:
-        raise ValueError("No 'variable' key found in info, cannot extract experiment variable.")
+        raise ValueError("No 'variable' key found in info, cannot extract experiment variable(s).")
 
 
 def get_data(sif_loc, pickle_loc, width_indexes=None, height_indexes=None, iter_accumulator=None):
