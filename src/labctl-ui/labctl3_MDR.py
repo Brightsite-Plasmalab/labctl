@@ -192,6 +192,64 @@ class ScriptExecutor(QObject):
                 return True
             except ValueError:
                 pass
+        elif cmd.strip() == "#BEEP":
+            self._log("Beep!", "ff00ff")
+            try:
+                import winsound
+
+                winsound.MessageBeep()
+            except ImportError:
+                print("\a", end="", flush=True)
+            return True
+        elif cmd.startswith("#RESULT "):
+            try:
+                # Format: #RESULT command == expected_result # comment
+                body = cmd[8:]
+                comment = ""
+                # Extract trailing comment after the result part
+                # Split on == first, then check for # in the expected part
+                parts = body.split("==")
+                if len(parts) == 2:
+                    command = parts[0].strip()
+                    expected_part = parts[1]
+                    if "#" in expected_part:
+                        expected_str, _, comment = expected_part.partition("#")
+                        expected = expected_str.strip()
+                        comment = comment.strip()
+                    else:
+                        expected = expected_part.strip()
+
+                    handler = self.serial_handlers[self.current_selser]
+
+                    # Send command
+                    handler.write(f"{command}\r\n")
+                    self._log(f"Checking: {command}", "ff00ff")
+
+                    # Wait for response via handler method (up to 1 second)
+                    response = handler.get_response(timeout=1.0)
+
+                    label = f" ({comment})" if comment else ""
+                    if response is not None:
+                        if response == expected:
+                            self._log(
+                                f"Success{label}: {response} == {expected}", "00ff00"
+                            )
+                        else:
+                            self._log(
+                                f"Failure{label}: {response} != {expected}", "ff0000"
+                            )
+                            self.status_message.emit(
+                                f"Verification failed{label}: {response} != {expected}",
+                                True,
+                            )
+                    else:
+                        self._log(f"Failure{label}: No response received", "ff0000")
+                        self.status_message.emit(
+                            f"Verification failed{label}: No response", True
+                        )
+                    return True
+            except Exception as e:
+                self._log(f"Error in #RESULT: {e}", "ff0000")
         return False
 
     def _log(self, message: str, color: str):
