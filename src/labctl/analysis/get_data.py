@@ -447,10 +447,23 @@ def get_data_2D(
         ``((n_iter,) config_num, (n_frames,) width)`` depending on whether
         *iter_accumulator* is provided and on the number of iterations.
     """
-    # data shape ((n_iter), config_num, (n_fames), height, width 
+    # data shape ((n_iter,) config_num, (n_fames,) height, width
     data = get_data(sif_loc, pickle_loc, width_indexes=width_indexes, height_indexes=height_indexes, 
                     iter_accumulator=iter_accumulator)
 
     accumulator_func = _get_accumulator(height_accumulator, axis=-2, name="height_accumulator")
-    # new shape ((n_iter), config_num, (n_fames), width 
+    # new shape ((n_iter,) config_num, (n_fames,) width
     return accumulator_func(data)
+
+
+def get_wavelengths(sif_loc, width_indexes=None):
+    _, img_info = sif_parser.np_open(sif_loc, lazy='memmap')
+    image_size = img_info['size']
+
+    width_indexes = _set_indexes(width_indexes, image_size[0], 'width_indexes')
+    indexes = np.arange(*width_indexes)
+    cal_data = img_info['Calibration_data']
+    wavelengths = np.full_like(indexes, cal_data[0])
+    for index, val in enumerate(cal_data[1:], start=1):
+        wavelengths += val*(indexes**index)
+    return wavelengths
