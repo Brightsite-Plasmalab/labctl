@@ -31,7 +31,7 @@ def get_data(sif_loc, pickle_loc, width_indexes=None, height_indexes=None, iter_
     image_size = img_info['size']
     has_background = info["background_every"] != 0
 
-    config_values = _config_values(info)
+    config_num = _config_num(info)
 
     def set_indexes(given_value, dir_image_size, name):
         if given_value is None:
@@ -50,15 +50,15 @@ def get_data(sif_loc, pickle_loc, width_indexes=None, height_indexes=None, iter_
             return given_value[0], given_value[1]
 
 
-    if width_indexes is None:
-        width_indexes = (0, image_size[0])
-    if height_indexes is None:
-        height_indexes = (0, image_size[1])
+    width_indexes = set_indexes(width_indexes, image_size[0], "width_indexes")
+    height_indexes = set_indexes(height_indexes, image_size[1], "height_indexes")
+    new_image_size = (height_indexes[1]-height_indexes[0], width_indexes[1]-width_indexes[0])
 
     def _data_getter(signal, img_data, info, accumulator_func, index_iter, indexer):
+        nonlocal new_image_size
         index = 0
         for i, frames in enumerate(info["n_frames"]):
-            acc_signal = np.zeros((frames, image_size[1], width_indexes[1] - width_indexes[0]))
+            acc_signal = np.zeros((frames, *new_image_size))
 
             for j in range(frames):
                 data = _get_data(img_data, info, index, index_iter, indexer)
@@ -78,13 +78,15 @@ def get_data(sif_loc, pickle_loc, width_indexes=None, height_indexes=None, iter_
             return signal
 
     def accumulator_data(info, img_data, accumulator_func, n_iter, indexer):
-        data_shape = (len(config_values), image_size[1], width_indexes[1] - width_indexes[0])
+        nonlocal new_image_size
+        data_shape = (config_num, *new_image_size)
         partial_func = functools.partial(_data_getter, img_data=img_data, info=info, accumulator_func=accumulator_func,
                                          indexer=indexer)
         return _over_n_iter(partial_func, n_iter, data_shape)
 
     def full_data(info, img_data, n_frames, n_iter, indexer):
-        data_shape = (len(config_values), n_frames, image_size[1], width_indexes[1] - width_indexes[0])
+        nonlocal new_image_size
+        data_shape = (config_num, n_frames, *new_image_size)
         partial_func = functools.partial(_data_getter, img_data=img_data, info=info, accumulator_func=lambda x: x,
                                          indexer=indexer)
         return _over_n_iter(partial_func, n_iter, data_shape)
