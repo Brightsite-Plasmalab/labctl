@@ -49,11 +49,11 @@ class PolarisationFilterExperiment(CameraExperiment):
 
         if i == 0:
             alphai = self.alpha_ver
-            cmds.append(f"# Selecting vertical rotation: {alphai:.3f} degrees")
+            cmds.comment(f"Selecting vertical rotation: {alphai:.3f} degrees")
             self.rotationstage.goto_degrees(alphai)
         else:
             alphai = self.alpha_hor
-            cmds.append(f"# Selecting horizontal rotation: {alphai:.3f} degrees")
+            cmds.comment(f"Selecting horizontal rotation: {alphai:.3f} degrees")
             self.rotationstage.goto_degrees(alphai)
 
     def make_postprocessing_info(self):

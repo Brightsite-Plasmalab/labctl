@@ -44,7 +44,7 @@ class TranslationStageExperiment(CameraExperiment):
     def prepare_config(self, cmds, i):
         super().prepare_config(cmds, i)
         xi = self.x[i]
-        cmds.append(f"# Selecting position {i}: {xi:.3f} mm")
+        cmds.comment(f"Selecting position {i}: {xi:.3f} mm")
         self.translationstage.move_to(axis=1, position=xi)
 
     def shutdown_experiment(self):

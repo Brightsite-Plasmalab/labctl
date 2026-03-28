@@ -22,7 +22,7 @@ class MetaCommands(ScriptBase):
         """
         Add a comment to the script, which is printed in the terminal when the script is executed.
         """
-        self.append(comment)
+        self.append(f"# {comment}")
         return self
 
     def test(self, test_command, result) -> Self:

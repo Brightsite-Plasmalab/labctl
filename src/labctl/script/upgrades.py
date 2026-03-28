@@ -17,12 +17,12 @@ class ScriptInfo(ScriptBase):
         super().__init__()
 
     def header_info(self):
-        self.append(f"# Configuration file for lab automation")
+        self.comment(f"Configuration file for lab automation")
         if self.title is not None:
-            self.append(f"#   Title:  {self.title}")
-        self.append(f"#   Date:   {self.date}")
+            self.comment(f"  Title:  {self.title}")
+        self.comment(f"  Date:   {self.date}")
         if self.author is not None:
-            self.append(f"#   Author: {self.author}")
+            self.comment(f"  Author: {self.author}")
 
 
 class DeviceCommands(ScriptBase):
