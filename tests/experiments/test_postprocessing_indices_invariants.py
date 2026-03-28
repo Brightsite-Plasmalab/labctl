@@ -4,7 +4,7 @@ import pytest
 from labctl.experiments.camera import BackgroundConfiguration
 from labctl.experiments.camera_timesweep import CameraTimesweepExperiment
 from labctl.experiments.polarisation import PolarisationFilterExperiment
-from labctl.experiments.polarisation_calibration import PolarisationFilterCalibrationExperiment
+from labctl.experiments.polarisation_sweep import PolarisationFilterSweepExperiment
 from labctl.experiments.pulsed_microwave import PulsedMicrowaveTimesweep
 from labctl.experiments.raman_2d import Raman2DExperiment
 from labctl.experiments.translation_stage import TranslationStageExperiment
@@ -28,7 +28,7 @@ def _build_experiment_instance(experiment_class: type, background_every: Backgro
         exp.n_frames = [2, 3]
         exp.t0 = 0.0
         exp.delta_t = [0.0, 1.0]
-    elif experiment_class is PolarisationFilterCalibrationExperiment:
+    elif experiment_class is PolarisationFilterSweepExperiment:
         exp.n_frames = [2, 1, 2]
         exp.alpha = [0.0, 45.0, 90.0]
     elif experiment_class is PolarisationFilterExperiment:
@@ -71,7 +71,7 @@ def _expected_indices_for_first_iteration(exp) -> list[tuple[np.ndarray, np.ndar
     "experiment_class",
     [
         CameraTimesweepExperiment,
-        PolarisationFilterCalibrationExperiment,
+        PolarisationFilterSweepExperiment,
         PolarisationFilterExperiment,
         Raman2DExperiment,
         TranslationStageExperiment,

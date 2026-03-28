@@ -7,8 +7,8 @@ import typing_extensions
 from labctl.experiments.base import BaseExperiment, BaseExperimentKwargs
 from labctl.experiments.camera import CameraExperiment, CameraExperimentKwargs
 from labctl.experiments.camera_timesweep import CameraTimesweepExperiment, CameraTimesweepExperimentKwargs
-from labctl.experiments.polarisation_calibration import (PolarisationFilterCalibrationExperiment,
-                                                         PolarisationFilterCalibrationExperimentKwargs)
+from labctl.experiments.polarisation_sweep import (PolarisationFilterSweepExperiment,
+                                                   PolarisationFilterSweepExperimentKwargs)
 from labctl.experiments.polarisation import PolarisationFilterExperiment, PolarisationFilterExperimentKwargs
 from labctl.experiments.laser_Qswitch_timesweep import LaserTimesweepExperiment, LaserTimesweepExperimentKwargs
 from labctl.experiments.translation_stage import TranslationStageExperiment, TranslationStageExperimentKwargs
@@ -91,7 +91,7 @@ experiments_plus_kwargs = [
     (BaseExperiment, BaseExperimentKwargs),
     (CameraExperiment, CameraExperimentKwargs),
     (CameraTimesweepExperiment, CameraTimesweepExperimentKwargs),
-    (PolarisationFilterCalibrationExperiment, PolarisationFilterCalibrationExperimentKwargs),
+    (PolarisationFilterSweepExperiment, PolarisationFilterSweepExperimentKwargs),
     (PolarisationFilterExperiment, PolarisationFilterExperimentKwargs),
     (LaserTimesweepExperiment, LaserTimesweepExperimentKwargs),
     (TranslationStageExperiment, TranslationStageExperimentKwargs),
