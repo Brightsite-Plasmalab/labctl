@@ -3,13 +3,18 @@
 import sys
 import time
 import threading
-from typing import Dict, List, Optional, Callable
+from typing import List, Optional
 
 import serial
 from serial.tools.list_ports import comports
 from PyQt5.QtWidgets import QMessageBox, QApplication
 from PyQt5.QtCore import pyqtSignal, QObject
 from PyQt5 import QtWidgets
+
+try:
+    import winsound
+except ImportError:
+    pass
 
 import minimale_widget_st_multi
 
@@ -195,11 +200,9 @@ class ScriptExecutor(QObject):
         elif cmd.strip() == "#BEEP":
             self._log("Beep!", "ff00ff")
             try:
-                import winsound
-
                 winsound.MessageBeep()
-            except ImportError:
-                print("\a", end="", flush=True)
+            except:
+                pass
             return True
         elif cmd.startswith("#RESULT "):
             try:
