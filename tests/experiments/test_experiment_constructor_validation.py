@@ -1,7 +1,7 @@
 # TODO: Look at automatic generated tests
 import pytest
 
-from labctl.experiments.polarisation_calibration import PolarisationFilterCalibrationExperiment
+from labctl.experiments.polarisation_sweep import PolarisationFilterSweepExperiment
 from labctl.experiments.pulsed_microwave import PulsedMicrowaveTimesweep
 
 
@@ -19,7 +19,7 @@ def _base_camera_kwargs(**overrides):
 
 def test_polarisation_calibration_rejects_n_frames_length_mismatch():
     with pytest.raises(ValueError, match="Length of `N_frames` must match"):
-        PolarisationFilterCalibrationExperiment(
+        PolarisationFilterSweepExperiment(
             alpha=[0.0, 45.0],
             **_base_camera_kwargs(n_frames=[1]),
         )
@@ -27,7 +27,7 @@ def test_polarisation_calibration_rejects_n_frames_length_mismatch():
 
 def test_polarisation_calibration_rejects_non_sized_n_frames():
     with pytest.raises(TypeError, match="N_frames"):
-        PolarisationFilterCalibrationExperiment(
+        PolarisationFilterSweepExperiment(
             alpha=[0.0, 45.0],
             **_base_camera_kwargs(n_frames=object()),
         )
@@ -35,7 +35,7 @@ def test_polarisation_calibration_rejects_non_sized_n_frames():
 
 def test_polarisation_calibration_rejects_invalid_background_configuration_value():
     with pytest.raises(ValueError):
-        PolarisationFilterCalibrationExperiment(
+        PolarisationFilterSweepExperiment(
             alpha=[0.0, 45.0],
             **_base_camera_kwargs(background_every=2),
         )
