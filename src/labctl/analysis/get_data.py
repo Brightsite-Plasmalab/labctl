@@ -124,6 +124,51 @@ def _get_accumulator(
         raise ValueError(msg)
 
 
+def _set_indexes(
+    given_value: tuple[int, int] | None,
+    dir_image_size: int,
+    name: str,
+) -> tuple[int, int]:
+    """
+    Validate and normalise a pixel-range crop specification.
+
+    Parameters
+    ----------
+    given_value : tuple[int, int] | None
+        Requested ``(start, stop)`` range, or ``None`` for the full
+        extent along this axis.
+    dir_image_size : int
+        Total number of pixels along this axis.
+    name : str
+        Axis name used in error messages (e.g. ``'width'``).
+
+    Returns
+    -------
+    tuple[int, int]
+        Validated ``(start, stop)`` pixel range.
+
+    Raises
+    ------
+    ValueError
+        If the range is empty, starts below zero, or exceeds the image
+        dimension.
+    """
+    if given_value is None:
+        return 0, dir_image_size
+    elif given_value[0] >= given_value[1]:
+        msg = f"For `{name}_indexes` first value should be smaller than second value, found {given_value}"
+        raise ValueError(msg)
+    elif given_value[0] < 0:
+        msg = f"For `{name}_indexes` first value should be bigger or equal to zero, found {given_value[0]}"
+        raise ValueError(msg)
+    elif given_value[1] > dir_image_size:
+        msg = (f"For `{name}_indexes` second value should be smaller or equal to image size ({dir_image_size}), "
+               f"found {given_value[0]}")
+        raise ValueError(msg)
+    else:
+        return given_value[0], given_value[1]
+
+
 def get_data(
     sif_loc: str | PathLike[str],
     pickle_loc: str | PathLike[str],
@@ -186,53 +231,8 @@ def get_data(
 
     config_num = _config_num(info)
 
-    def set_indexes(
-        given_value: tuple[int, int] | None,
-        dir_image_size: int,
-        name: str,
-    ) -> tuple[int, int]:
-        """
-        Validate and normalise a pixel-range crop specification.
-
-        Parameters
-        ----------
-        given_value : tuple[int, int] | None
-            Requested ``(start, stop)`` range, or ``None`` for the full
-            extent along this axis.
-        dir_image_size : int
-            Total number of pixels along this axis.
-        name : str
-            Axis name used in error messages (e.g. ``'width'``).
-
-        Returns
-        -------
-        tuple[int, int]
-            Validated ``(start, stop)`` pixel range.
-
-        Raises
-        ------
-        ValueError
-            If the range is empty, starts below zero, or exceeds the image
-            dimension.
-        """
-        if given_value is None:
-            return 0, dir_image_size
-        elif given_value[0] >= given_value[1]:
-            msg = f"For `{name}_indexes` first value should be smaller than second value, found {given_value}"
-            raise ValueError(msg)
-        elif given_value[0] < 0:
-            msg = f"For `{name}_indexes` first value should be bigger or equal to zero, found {given_value[0]}"
-            raise ValueError(msg)
-        elif given_value[1] > dir_image_size:
-            msg = (f"For `{name}_indexes` second value should be smaller or equal to image size ({dir_image_size}), "
-                   f"found {given_value[0]}")
-            raise ValueError(msg)
-        else:
-            return given_value[0], given_value[1]
-
-
-    width_indexes = set_indexes(width_indexes, image_size[0], "width_indexes")
-    height_indexes = set_indexes(height_indexes, image_size[1], "height_indexes")
+    width_indexes = _set_indexes(width_indexes, image_size[0], "width_indexes")
+    height_indexes = _set_indexes(height_indexes, image_size[1], "height_indexes")
     new_image_size = (height_indexes[1]-height_indexes[0], width_indexes[1]-width_indexes[0])
 
     def _data_getter(
