@@ -29,17 +29,17 @@ class BaseExperiment(ABC):
 
     @abstractmethod
     def make_labctl_script(self):
-        raise NotImplementedError("Subclasses must implement this method")
+        pass
 
     @abstractmethod
     def prepare_config(self, cmds, i):
         """Prepares experimental configuration i."""
-        raise NotImplementedError("Subclasses must implement this method")
+        pass
 
     @abstractmethod
     def get_config_names(self) -> List[str]:
         """Get the human-readable names of the configurations."""
-        raise NotImplementedError("Subclasses must implement this method")
+        pass
 
     def make_postprocessing_info(self):
         info_obj = {
@@ -53,7 +53,7 @@ class BaseExperiment(ABC):
 
     @abstractmethod
     def make_postprocessing_script(self) -> str:
-        raise NotImplementedError("Subclasses must implement this method")
+        pass
 
     def save_labctl_script(self, dest=None):
         if dest is None:
