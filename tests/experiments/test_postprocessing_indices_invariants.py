@@ -4,13 +4,17 @@ import pytest
 from labctl.experiments.camera import BackgroundConfiguration
 from labctl.experiments.camera_timesweep import CameraTimesweepExperiment
 from labctl.experiments.polarisation import PolarisationFilterExperiment
-from labctl.experiments.polarisation_calibration import PolarisationFilterCalibrationExperiment
+from labctl.experiments.polarisation_calibration import (
+    PolarisationFilterCalibrationExperiment,
+)
 from labctl.experiments.pulsed_microwave import PulsedMicrowaveTimesweep
 from labctl.experiments.raman_2d import Raman2DExperiment
 from labctl.experiments.translation_stage import TranslationStageExperiment
 
 
-def _build_experiment_instance(experiment_class: type, background_every: BackgroundConfiguration):
+def _build_experiment_instance(
+    experiment_class: type, background_every: BackgroundConfiguration
+):
     exp = object.__new__(experiment_class)
 
     exp.file_name = "test"
@@ -79,8 +83,13 @@ def _expected_indices_for_first_iteration(exp) -> list[tuple[np.ndarray, np.ndar
     ],
     ids=lambda cls: cls.__name__,
 )
-@pytest.mark.parametrize("background_every", [BackgroundConfiguration.NONE, BackgroundConfiguration.BEGIN_END])
-def test_postprocessing_indices_are_well_formed(experiment_class: type, background_every: BackgroundConfiguration):
+@pytest.mark.parametrize(
+    "background_every",
+    [BackgroundConfiguration.NONE, BackgroundConfiguration.BEGIN_END],
+)
+def test_postprocessing_indices_are_well_formed(
+    experiment_class: type, background_every: BackgroundConfiguration
+):
     exp = _build_experiment_instance(experiment_class, background_every)
 
     info = exp.make_postprocessing_info()
@@ -91,13 +100,14 @@ def test_postprocessing_indices_are_well_formed(experiment_class: type, backgrou
 
     indices = info["indices"]
     assert isinstance(indices, list)
-    assert len(indices) == exp.n_iter
 
     expected = _expected_indices_for_first_iteration(exp)
-    first_iteration = indices[0]
+    first_iteration = indices
     assert len(first_iteration) == len(exp.n_frames)
 
-    total_measurements = sum(exp.background_every.measurement_count(frames) for frames in exp.n_frames)
+    total_measurements = sum(
+        exp.background_every.measurement_count(frames) for frames in exp.n_frames
+    )
 
     for config_index, (foreground_idx, background_idx) in enumerate(first_iteration):
         assert np.all(np.diff(foreground_idx) >= 0)
@@ -110,9 +120,10 @@ def test_postprocessing_indices_are_well_formed(experiment_class: type, backgrou
         np.testing.assert_array_equal(foreground_idx, expected_foreground)
         np.testing.assert_array_equal(background_idx, expected_background)
 
-        assert len(foreground_idx) + len(background_idx) == exp.background_every.measurement_count(exp.n_frames[config_index])
+        assert len(foreground_idx) + len(
+            background_idx
+        ) == exp.background_every.measurement_count(exp.n_frames[config_index])
 
         all_indices = np.concatenate((foreground_idx, background_idx))
         assert np.all(all_indices >= 0)
         assert np.all(all_indices < total_measurements)
-
