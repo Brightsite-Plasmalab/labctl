@@ -37,12 +37,3 @@ class PolarisedTranslationStageExperiment(
         TranslationStageExperiment.prepare_config(self, cmds, i // 2)
         PolarisationFilterExperiment.prepare_config(self, cmds, i % 2)
 
-    def shutdown_experiment(self):
-        super(TranslationStageExperiment, self).shutdown_experiment()
-        super(PolarisationFilterExperiment, self).shutdown_experiment()
-
-    def make_postprocessing_info(self):
-        return {
-            **super(TranslationStageExperiment, self).make_postprocessing_info(),
-            **super(PolarisationFilterExperiment, self).make_postprocessing_info(),
-        }
