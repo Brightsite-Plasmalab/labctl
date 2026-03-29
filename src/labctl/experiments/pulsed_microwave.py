@@ -22,7 +22,12 @@ class PulsedMicrowaveTimesweep(CameraExperiment):
     NB:
     - The microwave pulse frequency should be a multiple of the laser frequency
     """
+
     channel_MW_trigger_int: int  # Channel of the microwave trigger
+    MW_pulse_frequency: int  # Frequency of the microwave pulse
+    t0: float  # Time delay such that the start of the laser pulse synchronizes with the start of the microwave pulse,
+    # should be ~100ns
+    delta_t: list[float]  # List of time delays to sweep, relative to t0
 
     def __init__(self, t0: float, delta_t: list[float], MW_pulse_frequency: int, channel_MW_trigger: str,
                  **kwargs: Unpack[CameraExperimentKwargs]):
@@ -75,6 +80,9 @@ class PulsedMicrowaveTimesweep(CameraExperiment):
         if delay < -900e-6:
             delay += 1 / self.MW_pulse_frequency
         return delay
+
+    def get_config_names(self) -> list[str]:
+        return [f"t_{ti*1e9:.3f}_ns".replace(".", "_") for ti in self.delta_t]
 
     def prepare_config(self, cmds: Script, i):
         """Prepares experimental configuration i."""

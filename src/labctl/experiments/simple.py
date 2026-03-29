@@ -12,3 +12,10 @@ class SimpleCameraExperiment(CameraExperiment):
     def prepare_config(self, cmds, i):
         # No configuration to prepare
         pass
+
+    @override
+    def make_postprocessing_info(self):
+        return {
+            **super().make_postprocessing_info(),
+            "variable": None,
+        }

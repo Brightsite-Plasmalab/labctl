@@ -17,7 +17,7 @@ class Raman2DExperiment(CameraExperiment):
         self.check_N_frames(len(self.filters), " One configuration for each filter.")
 
     def prepare_config(self, cmds, i):
-        cmds.append(f"# Selecting filter {i}")
+        cmds.comment(f"Selecting filter {i}")
 
         if i == 0:
             # Filter 0 is selected by homing

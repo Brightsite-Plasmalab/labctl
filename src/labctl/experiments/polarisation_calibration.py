@@ -1,8 +1,7 @@
-from typing_extensions import Unpack
+from typing_extensions import Unpack, List
 from labctl.devices import ThorlabsRotationStageCmds
 from labctl.script import Script
 from labctl.experiments.camera import CameraExperiment, CameraExperimentKwargs
-
 
 # TODO: change the alpha typehint to include np.ndarray of float/int
 
@@ -13,6 +12,7 @@ class PolarisationFilterCalibrationExperimentKwargs(CameraExperimentKwargs):
 
 class PolarisationFilterCalibrationExperiment(CameraExperiment):
     rotationstage: ThorlabsRotationStageCmds
+    alpha: list[float]
 
     def __init__(self, alpha: list[float], **kwargs: Unpack[CameraExperimentKwargs]):
         self.alpha = alpha
@@ -32,6 +32,9 @@ class PolarisationFilterCalibrationExperiment(CameraExperiment):
         super().prepare_experiment(cmds)
 
         self.rotationstage.home()
+
+    def get_config_names(self) -> List[str]:
+        return [f"alpha_{alphai:.3f}_deg".replace(".", "_") for alphai in self.alpha]
 
     def prepare_config(self, cmds, i):
         alphai = self.alpha[i]
