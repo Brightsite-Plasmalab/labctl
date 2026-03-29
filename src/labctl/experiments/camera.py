@@ -22,7 +22,7 @@ class BackgroundConfiguration(enum.IntEnum):
     def make_name_list(self, foreground_num: int) -> list[str]:
         assert (
             foreground_num >= 0
-        ), f"foreground_num must be at least 1, got {foreground_num}"
+        ), f"foreground_num must be at least 0, got {foreground_num}"
         if foreground_num == 0:
             return []
 
@@ -61,11 +61,11 @@ class BackgroundConfiguration(enum.IntEnum):
 
     def index_foreground(self, foreground_num) -> list[int]:
         names = self.make_name_list(foreground_num)
-        return (np.asarray(names) == "foreground").nonzero()[0]
+        return (np.asarray(names) == "foreground").nonzero()[0].astype(int)
 
     def index_background(self, foreground_num) -> list[int]:
         names = self.make_name_list(foreground_num)
-        return (np.asarray(names) == "background").nonzero()[0]
+        return (np.asarray(names) == "background").nonzero()[0].astype(int)
 
 
 class CameraExperimentKwargs(BaseExperimentKwargs):
@@ -310,25 +310,24 @@ class CameraExperiment(BaseExperiment):
         Returns a list that maps the configurations to the indices of the foreground and background frames in the acquired data.
         [ (fg_idx_config1, bg_idx_config1), (fg_idx_config2, bg_idx_config2), ... ],
         """
-        idx = []
+        # Initialize a list of empty indices (fg and bg) for each config
+        idx = [(np.array([], dtype=int),) * 2] * len(self.n_frames)
         running_total = 0
         for i in range(self.n_iter):
             for j, N_frames_j in enumerate(self.n_frames):
+                # For each config, get the indices of the foreground and background frames for this iteration, and add the running total to get the indices in the full acquired data
                 fg_idx = (
                     self.background_every.index_foreground(N_frames_j) + running_total
                 )
                 bg_idx = (
                     self.background_every.index_background(N_frames_j) + running_total
                 )
-                if i == 0:
-                    # On the first run, add a (fg, bg) tuple for each configuration
-                    idx.append((fg_idx, bg_idx))
-                else:
-                    # On subsequent runs, concatenate the new indices to the existing ones
-                    idx[j] = (
-                        np.concatenate((idx[j][0], fg_idx)),
-                        np.concatenate((idx[j][1], bg_idx)),
-                    )
+
+                # Append the indices for this iteration to the total indices for this config
+                idx[j] = (
+                    np.concatenate((idx[j][0], fg_idx), dtype=int),
+                    np.concatenate((idx[j][1], bg_idx), dtype=int),
+                )
                 running_total += len(fg_idx) + len(bg_idx)
 
         return idx
