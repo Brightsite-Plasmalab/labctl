@@ -268,12 +268,10 @@ def get_data(
             Selects signal (``0``) or background (``1``) frames.
         """
         nonlocal new_image_size
-        index = 0
         for i, frames in enumerate(info["n_frames"]):
             acc_signal = np.zeros((frames, *new_image_size))
-
             for j in range(frames):
-                data = _get_data(img_data, info, index, index_iter, indexer)
+                data = _get_data(img_data, info, indexer, j, index_iter)
                 acc_signal[j] = data[:, :, slice(*width_indexes)]
             signal[i] = accumulator_func(acc_signal)
 
