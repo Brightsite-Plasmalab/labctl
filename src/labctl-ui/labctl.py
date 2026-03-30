@@ -22,9 +22,7 @@ import labctl_ui
 SERIAL_NEWLINE_CHARS = "\n"
 
 # Colors (Hexadecimal strings)
-COLOR_DEVICE_0 = "ff0000"  # Red
-COLOR_DEVICE_1 = "cccc00"  # Yellowish
-COLOR_DEVICE_2 = "0000ff"  # Blue
+COLORS_DEVICES = ["cccc00", "0000ff", "00cccc"]  # Yellow, Blue, Cyan
 COLOR_META = "ff00ff"  # Magenta
 COLOR_TEST_SUCCESS = "00ff00"  # Green
 COLOR_TEST_FAILURE = "ff0000"  # Red
@@ -34,8 +32,9 @@ COLOR_LOG = "000000"  # Black
 class SerialHandler(QObject):
     """Manages a single serial connection and its retrieval thread."""
 
-    data_received = pyqtSignal(str)  # message, color
+    data_received = pyqtSignal(str)  # message
     newline_chars: bytes = SERIAL_NEWLINE_CHARS
+    default_color: str = "000000"
 
     def __init__(
         self, index: int, color: str, newline_chars: bytes = SERIAL_NEWLINE_CHARS
@@ -324,14 +323,14 @@ class ExampleApp(QtWidgets.QMainWindow, labctl_ui.Ui_MainWindow):
         self.addline.connect(self.log_TE.append)
 
         self.serial_handlers: List[SerialHandler] = [
-            SerialHandler(0, COLOR_DEVICE_0),
-            SerialHandler(1, COLOR_DEVICE_1),
-            SerialHandler(2, COLOR_DEVICE_2),
+            SerialHandler(0, COLORS_DEVICES[0]),
+            SerialHandler(1, COLORS_DEVICES[1]),
+            SerialHandler(2, COLORS_DEVICES[2]),
         ]
-        for handler in self.serial_handlers:
+        for i, handler in enumerate(self.serial_handlers):
             handler.data_received.connect(
-                lambda msg, h=handler: self.addline.emit(
-                    self.color(msg, h.default_color)
+                lambda msg, h=handler, idx=i: self.addline.emit(
+                    self.color(msg, COLORS_DEVICES[idx])
                 )
             )
 
