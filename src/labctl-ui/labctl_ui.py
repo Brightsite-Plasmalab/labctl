@@ -104,7 +104,7 @@ class Ui_MainWindow(object):
         self.cmdPath_lE.setObjectName("cmdPath_lE")
         self.horizontalLayout_0.addWidget(self.cmdPath_lE)
         self.execLabctlScript_btn = QtWidgets.QPushButton(self.groupBox)
-        self.execLabctlScript_btn.setEnabled(False)
+        self.execLabctlScript_btn.setEnabled(True)
         self.execLabctlScript_btn.setObjectName("execLabctlScript_btn")
         self.horizontalLayout_0.addWidget(self.execLabctlScript_btn)
         self.gridLayout.addLayout(self.horizontalLayout_0, 0, 0, 1, 1)
