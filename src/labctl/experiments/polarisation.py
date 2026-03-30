@@ -38,7 +38,7 @@ class PolarisationFilterExperiment(PolarisationFilterSweepExperiment):
         if type(self) is PolarisationFilterExperiment:
             self.check_N_frames(2, " One configuration for each polarization.")
 
-    def get_config_names(self) -> List[str]:
+    def get_config_names(self) -> list[str]:
         return ["ver", "hor"]
 
     def prepare_config(self, cmds, i):

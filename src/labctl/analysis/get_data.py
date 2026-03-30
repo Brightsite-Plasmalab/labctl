@@ -233,6 +233,7 @@ def get_data(
 
     width_indexes = _set_indexes(width_indexes, image_size[0], "width_indexes")
     height_indexes = _set_indexes(height_indexes, image_size[1], "height_indexes")
+    # TODO: Is this the correct order?
     new_image_size = (height_indexes[1]-height_indexes[0], width_indexes[1]-width_indexes[0])
 
     def _data_getter(

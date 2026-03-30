@@ -47,3 +47,7 @@ class Raman2DExperiment(CameraExperiment):
             }
         )
         return info
+
+
+    def make_postprocessing_script(self) -> str:
+        pass

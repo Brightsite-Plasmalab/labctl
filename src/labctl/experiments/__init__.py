@@ -8,6 +8,9 @@ from labctl.experiments.polarisation_sweep import (
 from labctl.experiments.experiment_polarised_translation_stage import (
     PolarisedTranslationStageExperiment,
 )
+from labctl.experiments.pulsed_microwave import PulsedMicrowaveTimesweep
+from labctl.experiments.polarisation import PolarisationFilterExperiment
+from labctl.experiments.base import BaseExperiment
 from labctl.experiments.simple import SimpleCameraExperiment
 
 from labctl.experiments.camera_timesweep import CameraTimesweepExperiment
