@@ -45,7 +45,9 @@ class DeviceCommands(ScriptBase):
                 f"Channel {channel} is already occupied by device {self.get_device_by_channel(channel)}"
             )
 
-        print(f"Registering device {device} on channel {channel}")
+        print(
+            f"Registering device {device} on channel {channel} with baud rate {device.preferred_baud_rate()}"
+        )
         self.devices[device] = channel
 
         return channel
@@ -76,6 +78,18 @@ class DeviceCommands(ScriptBase):
                 self.current_channel = channel
         else:
             raise Exception(f"Invalid channel type: {type(channel)}")
+
+    def test(self, device, test_command, result, allow_overflow: bool = False):
+        """
+        Add a test command to the script, which is sent to a serial device and compared to the expected result.
+
+        If allow_overflow is True, only the first len(result) characters of
+        the device response are compared (syntax: ``#TESTn command == result``).
+        """
+        n = len(result) if allow_overflow else ""
+        self.switch_device(device)
+        self.append(f"#TEST{n} {test_command} == {result}")
+        return self
 
     def append(self, commands: str | list[str], device=None):
         if device is not None:

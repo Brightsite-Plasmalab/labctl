@@ -25,9 +25,9 @@ class MetaCommands(ScriptBase):
         self.append(f"# {comment}")
         return self
 
-    def test(self, test_command, result) -> Self:
+    def beep(self):
         """
-        Add a test command to the script, which is sent to a serial device and compared to the expected result.
+        Add a beep command to the script, which makes the computer emit a beep sound when executed.
         """
-        self.append(f"#TEST {test_command} == {result}")
+        self.append("#BEEP")
         return self

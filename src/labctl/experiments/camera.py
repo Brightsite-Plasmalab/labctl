@@ -223,6 +223,7 @@ class CameraExperiment(BaseExperiment):
         pass
 
     def make_labctl_script(self) -> Script:
+        super().make_labctl_script()  # This will check the config and prepare the experiment
         cmds = self.make_labctl_header()
         self.pdg = cast(BncPdgCmds, list(cmds.devices.keys())[0])
 

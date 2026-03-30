@@ -5,6 +5,13 @@ from labctl.devices.base import DeviceBase
 
 
 class ThorlabsStageCmds(DeviceBase):
+    def verify_device(self):
+        super().verify_device()
+        self.parent.test(self, "0in", "0IN0E114", allow_overflow=True)
+
+    def preferred_baud_rate(self):
+        return 9600
+
     def home(self):
         # Home twice...
         for i in range(2):
@@ -27,6 +34,13 @@ class ThorlabsStageCmds(DeviceBase):
 
 class ThorlabsRotationStageCmds(DeviceBase):
     PULSES_PER_REV = 143360  # 0x23000
+
+    def verify_device(self):
+        super().verify_device()
+        self.parent.test(self, "0in", "0IN0E114", allow_overflow=True)
+
+    def preferred_baud_rate(self):
+        return 9600
 
     # See /Users/martijn/Projects/study/UM/Software/projects/hydrogen/rotation_stage.py
     def home(self):
