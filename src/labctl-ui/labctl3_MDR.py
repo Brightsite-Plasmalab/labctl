@@ -263,6 +263,15 @@ class ScriptExecutor(QObject):
 
 class ExampleApp(QtWidgets.QMainWindow, minimale_widget_st_multi.Ui_MainWindow):
     addline = pyqtSignal(str)
+    ports: List[str] = []
+    init_btns: List[QtWidgets.QPushButton] = []
+    send_btns: List[QtWidgets.QPushButton] = []
+    cmd_widgets: List[QtWidgets.QLineEdit] = []
+    port_widgets: List[QtWidgets.QComboBox] = []
+    baud_widgets: List[QtWidgets.QComboBox] = []
+    serial_handlers: List[SerialHandler] = []
+    script_executor: Optional[ScriptExecutor] = None
+    scriptmode_active: bool = False
 
     def __init__(self):
         super(self.__class__, self).__init__()
@@ -277,19 +286,15 @@ class ExampleApp(QtWidgets.QMainWindow, minimale_widget_st_multi.Ui_MainWindow):
         self.cmdPath_lE.returnPressed.connect(self.execLabctlScript)
 
         self.update_list_btn.clicked.connect(self.add_ports)
-        self.init_btn.clicked.connect(lambda: self.serial_connect(0))
-        self.init_btn_1.clicked.connect(lambda: self.serial_connect(1))
-        self.init_btn_2.clicked.connect(lambda: self.serial_connect(2))
-        self.move_btn.clicked.connect(self.send_move_request)
-        self.stop_btn.clicked.connect(self.send_stop_request)
-        self.send_btn_0.clicked.connect(lambda: self.write_data(0))
-        self.cmd_0.returnPressed.connect(lambda: self.write_data(0))
+        self.init_btns = [self.init_btn, self.init_btn_1, self.init_btn_2]
+        self.send_btns = [self.send_btn_0, self.send_btn_1, self.send_btn_2]
+        self.cmd_widgets = [self.cmd_0, self.cmd_1, self.cmd_2]
+        self.port_widgets = [self.port_cB, self.port_cB_1, self.port_cB_2]
 
-        self.send_btn_1.clicked.connect(lambda: self.write_data(1))
-        self.cmd_1.returnPressed.connect(lambda: self.write_data(1))
-
-        self.send_btn_2.clicked.connect(lambda: self.write_data(2))
-        self.cmd_2.returnPressed.connect(lambda: self.write_data(2))
+        for i in range(3):
+            self.init_btns[i].clicked.connect(lambda: self.serial_connect(i))
+            self.send_btns[i].clicked.connect(lambda: self.write_data(i))
+            self.cmd_widgets[i].returnPressed.connect(lambda: self.write_data(i))
 
         self.addline.connect(self.log_TE.append)
 
@@ -338,11 +343,8 @@ class ExampleApp(QtWidgets.QMainWindow, minimale_widget_st_multi.Ui_MainWindow):
         self.statusBar().showMessage(message)
 
     def serial_connect(self, index: int):
-        port_widgets = [self.port_cB, self.port_cB_1, self.port_cB_2]
-        baud_widgets = [self.baudrate_cB, self.baudrate_cB_1, self.baudrate_cB_2]
-
-        port = port_widgets[index].currentText()
-        baudrate = int(baud_widgets[index].currentText())
+        port = self.port_widgets[index].currentText()
+        baudrate = int(self.baud_widgets[index].currentText())
 
         used_coms = [
             h.conn.port
@@ -362,32 +364,21 @@ class ExampleApp(QtWidgets.QMainWindow, minimale_widget_st_multi.Ui_MainWindow):
             self._statusbar_message("Just connected to {}...".format(port))
 
             # Enable buttons based on index
-            if index == 0:
-                self.move_btn.setEnabled(True)
-                self.stop_btn.setEnabled(True)
-                self.send_btn_0.setEnabled(True)
-                self.execLabctlScript_btn.setEnabled(True)
-            elif index == 1:
-                self.send_btn_1.setEnabled(True)
-            elif index == 2:
-                self.send_btn_2.setEnabled(True)
+            self.send_btns[index].setEnabled(True)
         except Exception as e:
             self._statusbar_message(f"Failed to connect to {port}: {e}", True)
 
     def add_ports(self):
-        for n in range(8):
-            self.port_cB.removeItem(0)
-            self.port_cB_1.removeItem(0)
-            self.port_cB_2.removeItem(0)
-        for n, (port, desc, hwid) in enumerate(sorted(comports()), 1):
-            self.port_cB.addItem(port)
-            self.port_cB_1.addItem(port)
-            self.port_cB_2.addItem(port)
+        for port_widget in self.port_widgets:
+            for n in range(8):
+                port_widget.removeItem(0)
+            for n, (port, desc, hwid) in enumerate(sorted(comports()), 1):
+                port_widget.addItem(port)
 
     def write_data(self, index: int):
-        cmd_widgets = [self.cmd_0, self.cmd_1, self.cmd_2]
+        port = self.port_widgets[index].currentText()
         handler = self.serial_handlers[index]
-        commands = cmd_widgets[index].text().split("#")[0].split("|")
+        commands = self.cmd_widgets[index].text().split("#")[0].split("|")
 
         for line in commands:
             if not line.strip():
@@ -397,27 +388,17 @@ class ExampleApp(QtWidgets.QMainWindow, minimale_widget_st_multi.Ui_MainWindow):
             self.addline.emit(
                 self.color("{}".format(message.rstrip("\n")), handler.default_color)
             )
-            self._statusbar_message(
-                f'Sent "{message}" to {index} {self.port_cB.currentText()}...'
-            )
+            self._statusbar_message(f'Sent "{message}" to {index} ({port}) ...')
 
     def execLabctlScript(self):
         filename = self.cmdPath_lE.text().replace("file:///", "")
 
         if not self.script_executor.is_running:
-            self.execLabctlScript_btn.setText("Stop executing commands from file")
+            self.execLabctlScript_btn.setText("Stop script")
             self.script_executor.start(filename)
         else:
             self.script_executor.stop()
-            self.execLabctlScript_btn.setText("Start executing commands from file")
-
-    def send_move_request(self):
-        self.serial_handlers[0].write(":INST:STATE ON\n")
-        self._statusbar_message("Sent BNC delay generator start command")
-
-    def send_stop_request(self):
-        self.serial_handlers[0].write(":INST:STATE OFF\n")
-        self._statusbar_message("Sent BNC delay generator Stop command")
+            self.execLabctlScript_btn.setText("Execute script")
 
     def closeEvent(self, *args, **kwargs):
         super(QtWidgets.QMainWindow, self).closeEvent(*args, **kwargs)

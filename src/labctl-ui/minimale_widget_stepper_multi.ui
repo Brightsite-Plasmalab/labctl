@@ -194,7 +194,7 @@
             <bool>false</bool>
            </property>
            <property name="text">
-            <string>Execute commands in the file</string>
+            <string>Execute script</string>
            </property>
           </widget>
          </item>
@@ -228,34 +228,6 @@
         <widget class="QTextEdit" name="log_TE"/>
        </item>
        <item row="3" column="0">
-        <layout class="QHBoxLayout" name="horizontalLayout">
-         <item>
-          <widget class="QLabel" name="label_7">
-           <property name="text">
-            <string>Custom instruction:</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <layout class="QHBoxLayout" name="horizontalLayout_12">
-           <item>
-            <widget class="QLineEdit" name="cmd_le_1"/>
-           </item>
-           <item>
-            <widget class="QPushButton" name="send_btn_1">
-             <property name="enabled">
-              <bool>false</bool>
-             </property>
-             <property name="text">
-              <string>Send to 1</string>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </item>
-        </layout>
-       </item>
-       <item row="4" column="0">
         <layout class="QHBoxLayout" name="horizontalLayout_9">
          <item>
           <widget class="QLabel" name="label_6">
@@ -267,15 +239,43 @@
          <item>
           <layout class="QHBoxLayout" name="horizontalLayout_10">
            <item>
-            <widget class="QLineEdit" name="cmd_le"/>
+            <widget class="QLineEdit" name="cmd_0"/>
            </item>
            <item>
-            <widget class="QPushButton" name="send_btn">
+            <widget class="QPushButton" name="send_btn_0">
              <property name="enabled">
               <bool>false</bool>
              </property>
              <property name="text">
               <string>Send to 0</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+        </layout>
+       </item>
+       <item row="4" column="0">
+        <layout class="QHBoxLayout" name="horizontalLayout">
+         <item>
+          <widget class="QLabel" name="label_7">
+           <property name="text">
+            <string>Custom instruction:</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_12">
+           <item>
+            <widget class="QLineEdit" name="cmd_1"/>
+           </item>
+           <item>
+            <widget class="QPushButton" name="send_btn_1">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
+             <property name="text">
+              <string>Send to 1</string>
              </property>
             </widget>
            </item>
@@ -295,7 +295,7 @@
          <item>
           <layout class="QHBoxLayout" name="horizontalLayout_15">
            <item>
-            <widget class="QLineEdit" name="cmd_le_2"/>
+            <widget class="QLineEdit" name="cmd_2"/>
            </item>
            <item>
             <widget class="QPushButton" name="send_btn_2">
@@ -308,30 +308,6 @@
             </widget>
            </item>
           </layout>
-         </item>
-        </layout>
-       </item>
-       <item row="6" column="0">
-        <layout class="QHBoxLayout" name="horizontalLayout_11">
-         <item>
-          <widget class="QPushButton" name="stop_btn">
-           <property name="enabled">
-            <bool>false</bool>
-           </property>
-           <property name="text">
-            <string>Stop</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="move_btn">
-           <property name="enabled">
-            <bool>false</bool>
-           </property>
-           <property name="text">
-            <string>Start</string>
-           </property>
-          </widget>
          </item>
         </layout>
        </item>
