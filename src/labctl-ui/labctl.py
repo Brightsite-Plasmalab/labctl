@@ -280,8 +280,6 @@ class ExampleApp(QtWidgets.QMainWindow, labctl_ui.Ui_MainWindow):
         self.actionExit.triggered.connect(self.close)
         self.actionAbout.triggered.connect(self.about)
 
-        self.add_ports()
-
         self.execLabctlScript_btn.clicked.connect(self.execLabctlScript)
         self.cmdPath_lE.returnPressed.connect(self.execLabctlScript)
 
@@ -290,11 +288,13 @@ class ExampleApp(QtWidgets.QMainWindow, labctl_ui.Ui_MainWindow):
         self.send_btns = [self.send_btn_0, self.send_btn_1, self.send_btn_2]
         self.cmd_widgets = [self.cmd_0, self.cmd_1, self.cmd_2]
         self.port_widgets = [self.port_cB, self.port_cB_1, self.port_cB_2]
+        self.baud_widgets = [self.baud_cB, self.baud_cB_1, self.baud_cB_2]
 
         for i in range(3):
             self.init_btns[i].clicked.connect(lambda: self.serial_connect(i))
             self.send_btns[i].clicked.connect(lambda: self.write_data(i))
             self.cmd_widgets[i].returnPressed.connect(lambda: self.write_data(i))
+        self.add_ports()
 
         self.addline.connect(self.log_TE.append)
 
