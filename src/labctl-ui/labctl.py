@@ -204,9 +204,9 @@ class ScriptExecutor(QObject):
             except:
                 pass
             return True
-        elif cmd.startswith("#RESULT "):
+        elif cmd.startswith("#TEST "):
             try:
-                # Format: #RESULT command == expected_result # comment
+                # Format: #TEST command == expected_result # comment
                 body = cmd[8:]
                 comment = ""
                 # Extract trailing comment after the result part
