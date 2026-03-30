@@ -459,9 +459,7 @@ def get_wavelengths(sif_loc, width_indexes=None):
     image_size = img_info['size']
 
     width_indexes = _set_indexes(width_indexes, image_size[0], 'width_indexes')
-    indexes = np.arange(*width_indexes)
+    indexes = np.arange(width_indexes[0]+1, width_indexes[1]+1)
     cal_data = img_info['Calibration_data']
-    wavelengths = np.full_like(indexes, cal_data[0])
-    for index, val in enumerate(cal_data[1:], start=1):
-        wavelengths += val*(indexes**index)
+    wavelengths = np.polynomial.polynomial.polyval(indexes, cal_data)
     return wavelengths
