@@ -9,11 +9,12 @@ import sif_parser
 
 
 def _get_data(
-    data: np.ndarray,
-    info: dict,
-    indexer: int,
-    frame_index: int,
-    iter_index: int = 0,
+        data: np.ndarray,
+        info: dict,
+        fore_back_ground: int,
+        config_index: int,
+        frame_index: int,
+        iter_index: int = 0,
 ) -> np.ndarray:
     """
     Extract a single frame from the raw image data using the index mapping stored in *info*.
@@ -24,8 +25,10 @@ def _get_data(
         Raw image data loaded from the SIF file, indexed by frame number.
     info : dict
         Experiment metadata dictionary containing the ``'indices'`` mapping.
-    indexer : int
+    fore_back_ground : int
         Selects signal (``0``) or background (``1``) frame indices.
+    config_index: int
+        The index of the configuration.
     frame_index : int
         Index of the frame within the current configuration step.
     iter_index : int, optional
@@ -36,7 +39,7 @@ def _get_data(
     np.ndarray
         Squeezed image array for the requested frame.
     """
-    indexes = info['indices'][iter_index][frame_index][indexer]
+    indexes = info['indices'][iter_index][config_index][fore_back_ground][frame_index]
     return np.squeeze(data[indexes, :, :])
 
 
@@ -272,8 +275,8 @@ def get_data(
         for i, frames in enumerate(info["n_frames"]):
             acc_signal = np.zeros((frames, *new_image_size))
             for j in range(frames):
-                data = _get_data(img_data, info, indexer, j, index_iter)
-                acc_signal[j] = data[:, :, slice(*width_indexes)]
+                data = _get_data(img_data, info, indexer, i, j, index_iter)
+                acc_signal[j] = data[slice(*height_indexes), slice(*width_indexes)]  # TODO: correct order?
             signal[i] = accumulator_func(acc_signal)
 
     def _over_n_iter(
@@ -342,9 +345,10 @@ def get_data(
         """
         nonlocal new_image_size
         data_shape = (config_num, *new_image_size)
-        partial_func = functools.partial(_data_getter, img_data=img_data, info=info, accumulator_func=accumulator_func,
-                                         indexer=indexer)
-        return _over_n_iter(partial_func, n_iter, data_shape)
+        def _partial_func(signal: np.ndarray, index_iter: int) -> None:
+            nonlocal img_data, info, accumulator_func, indexer
+            return _data_getter(signal, img_data, info, accumulator_func, index_iter, indexer)
+        return _over_n_iter(_partial_func, n_iter, data_shape)
 
     def full_data(
         info: dict,
@@ -378,9 +382,11 @@ def get_data(
         """
         nonlocal new_image_size
         data_shape = (config_num, n_frames, *new_image_size)
-        partial_func = functools.partial(_data_getter, img_data=img_data, info=info, accumulator_func=lambda x: x,
-                                         indexer=indexer)
-        return _over_n_iter(partial_func, n_iter, data_shape)
+
+        def _partial_func(signal: np.ndarray, index_iter: int) -> None:
+            return _data_getter(signal, img_data, info, (lambda x: x), index_iter, indexer)
+
+        return _over_n_iter(_partial_func, n_iter, data_shape)
 
     if iter_accumulator is None:
         n_frames_set = set(info["n_frames"])
@@ -460,7 +466,7 @@ def get_wavelengths(sif_loc, width_indexes=None):
     image_size = img_info['size']
 
     width_indexes = _set_indexes(width_indexes, image_size[0], 'width_indexes')
-    indexes = np.arange(width_indexes[0]+1, width_indexes[1]+1)
+    indexes = np.arange(width_indexes[0] + 1, width_indexes[1] + 1)
     cal_data = img_info['Calibration_data']
     wavelengths = np.polynomial.polynomial.polyval(indexes, cal_data)
     return wavelengths
