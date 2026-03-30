@@ -16,7 +16,7 @@ try:
 except ImportError:
     pass
 
-import minimale_widget_st_multi
+import labctl_ui
 
 
 class SerialHandler(QObject):
@@ -261,7 +261,7 @@ class ScriptExecutor(QObject):
         self.add_log.emit(formatted, color)
 
 
-class ExampleApp(QtWidgets.QMainWindow, minimale_widget_st_multi.Ui_MainWindow):
+class ExampleApp(QtWidgets.QMainWindow, labctl_ui.Ui_MainWindow):
     addline = pyqtSignal(str)
     ports: List[str] = []
     init_btns: List[QtWidgets.QPushButton] = []

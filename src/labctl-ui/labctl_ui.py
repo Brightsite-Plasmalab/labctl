@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file '.\minimale_widget_stepper_multi.ui'
+# Form implementation generated from reading ui file '.\labctl.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.9
 #
@@ -40,7 +40,9 @@ class Ui_MainWindow(object):
         self.init_btn = QtWidgets.QPushButton(self.groupBox_3)
         self.init_btn.setObjectName("init_btn")
         self.horizontalLayout_4.addWidget(self.init_btn)
-        self.formLayout.setLayout(0, QtWidgets.QFormLayout.FieldRole, self.horizontalLayout_4)
+        self.formLayout.setLayout(
+            0, QtWidgets.QFormLayout.FieldRole, self.horizontalLayout_4
+        )
         self.label_0 = QtWidgets.QLabel(self.groupBox_3)
         self.label_0.setObjectName("label_0")
         self.formLayout.setWidget(1, QtWidgets.QFormLayout.LabelRole, self.label_0)
@@ -59,7 +61,9 @@ class Ui_MainWindow(object):
         self.init_btn_1 = QtWidgets.QPushButton(self.groupBox_3)
         self.init_btn_1.setObjectName("init_btn_1")
         self.horizontalLayout_6.addWidget(self.init_btn_1)
-        self.formLayout.setLayout(1, QtWidgets.QFormLayout.FieldRole, self.horizontalLayout_6)
+        self.formLayout.setLayout(
+            1, QtWidgets.QFormLayout.FieldRole, self.horizontalLayout_6
+        )
         self.label_2 = QtWidgets.QLabel(self.groupBox_3)
         self.label_2.setObjectName("label_2")
         self.formLayout.setWidget(2, QtWidgets.QFormLayout.LabelRole, self.label_2)
@@ -78,10 +82,14 @@ class Ui_MainWindow(object):
         self.init_btn_2 = QtWidgets.QPushButton(self.groupBox_3)
         self.init_btn_2.setObjectName("init_btn_2")
         self.horizontalLayout_13.addWidget(self.init_btn_2)
-        self.formLayout.setLayout(2, QtWidgets.QFormLayout.FieldRole, self.horizontalLayout_13)
+        self.formLayout.setLayout(
+            2, QtWidgets.QFormLayout.FieldRole, self.horizontalLayout_13
+        )
         self.update_list_btn = QtWidgets.QPushButton(self.groupBox_3)
         self.update_list_btn.setObjectName("update_list_btn")
-        self.formLayout.setWidget(3, QtWidgets.QFormLayout.SpanningRole, self.update_list_btn)
+        self.formLayout.setWidget(
+            3, QtWidgets.QFormLayout.SpanningRole, self.update_list_btn
+        )
         self.verticalLayout.addWidget(self.groupBox_3)
         self.groupBox = QtWidgets.QGroupBox(self.centralwidget)
         self.groupBox.setObjectName("groupBox")
@@ -105,7 +113,9 @@ class Ui_MainWindow(object):
         self.label_11 = QtWidgets.QLabel(self.groupBox)
         self.label_11.setObjectName("label_11")
         self.horizontalLayout_3.addWidget(self.label_11)
-        spacerItem = QtWidgets.QSpacerItem(244, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        spacerItem = QtWidgets.QSpacerItem(
+            244, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
+        )
         self.horizontalLayout_3.addItem(spacerItem)
         self.gridLayout.addLayout(self.horizontalLayout_3, 1, 0, 1, 1)
         self.log_TE = QtWidgets.QTextEdit(self.groupBox)
