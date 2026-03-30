@@ -29,8 +29,14 @@ class PulsedMicrowaveTimesweep(CameraExperiment):
     # should be ~100ns
     delta_t: list[float]  # List of time delays to sweep, relative to t0
 
-    def __init__(self, t0: float, delta_t: list[float], MW_pulse_frequency: int, channel_MW_trigger: str,
-                 **kwargs: Unpack[CameraExperimentKwargs]):
+    def __init__(
+        self,
+        t0: float,
+        delta_t: list[float],
+        MW_pulse_frequency: int,
+        channel_MW_trigger: str,
+        **kwargs: Unpack[CameraExperimentKwargs],
+    ):
         self.t0 = t0
         self.delta_t = delta_t
         self.channel_MW_trigger = channel_MW_trigger  # Should be in [A, B, ..., H]
@@ -40,13 +46,20 @@ class PulsedMicrowaveTimesweep(CameraExperiment):
 
         # Perform some checks to see if all inputs are valid
         if self.channel_MW_trigger_int < 3 or self.channel_MW_trigger_int > 8:
-            raise ValueError(f"Invalid channel {channel_MW_trigger}, should be in [D, E, F, G, H]")
+            raise ValueError(
+                f"Invalid channel {channel_MW_trigger}, should be in [D, E, F, G, H]"
+            )
         self.MW_pulse_frequency = MW_pulse_frequency
+        self.laser_frequency = kwargs.get("laser_frequency", 30)
 
-        if (self.MW_pulse_frequency % self.laser_frequency != 0) or (self.MW_pulse_frequency == self.laser_frequency):
-            msg = (f"The microwave pulse frequency should be a multiple of the laser frequency "
-                   f"({self.laser_frequency}Hz). The closest multiple is "
-                   f"{self.laser_frequency * round(self.MW_pulse_frequency / self.laser_frequency)}Hz")
+        if (self.MW_pulse_frequency % self.laser_frequency != 0) or (
+            self.MW_pulse_frequency == self.laser_frequency
+        ):
+            msg = (
+                f"The microwave pulse frequency should be a multiple of the laser frequency "
+                f"({self.laser_frequency}Hz). The closest multiple is "
+                f"{self.laser_frequency * round(self.MW_pulse_frequency / self.laser_frequency)}Hz"
+            )
             raise ValueError(msg)
         multiple = self.MW_pulse_frequency // self.laser_frequency
 
@@ -59,20 +72,26 @@ class PulsedMicrowaveTimesweep(CameraExperiment):
         print(f"\t T0: {T0_str} s")
         print(f"\t Burst count: {multiple}")
         print(f"Channel {self.channel_MW_trigger} is used for the MW trigger")
-        print(f"\t and synchronizes the start of the MW to the laser at t0 = {int(self.t0*1e9):_d} ns")
+        print(
+            f"\t and synchronizes the start of the MW to the laser at t0 = {int(self.t0*1e9):_d} ns"
+        )
         print("\n")
 
         super().__init__(**kwargs, camera_delay_background=0)
-        self.check_N_frames(len(self.delta_t), " One configuration for each time delay value.")
+        self.check_N_frames(
+            len(self.delta_t), " One configuration for each time delay value."
+        )
 
     def make_postprocessing_info(self):
         info = super().make_postprocessing_info()
-        info.update({
-            "variable": "t",
-            "delta_t": self.delta_t,
-            "t0": self.t0,
-            "t": [ti + self.t0 for ti in self.delta_t],
-        })
+        info.update(
+            {
+                "variable": "t",
+                "delta_t": self.delta_t,
+                "t0": self.t0,
+                "t": [ti + self.t0 for ti in self.delta_t],
+            }
+        )
         return info
 
     def get_mw_delay(self, i):
