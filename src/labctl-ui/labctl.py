@@ -361,7 +361,9 @@ class ExampleApp(QtWidgets.QMainWindow, labctl_ui.Ui_MainWindow):
         try:
             handler = self.serial_handlers[index]
             handler.connect(port, baudrate)
-            self._statusbar_message("Just connected to {}...".format(port))
+            self._statusbar_message(
+                f"Just connected channel {index} to {port} with baud rate {baudrate}..."
+            )
 
             # Enable buttons based on index
             self.send_btns[index].setEnabled(True)
