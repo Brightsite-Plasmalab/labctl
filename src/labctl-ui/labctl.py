@@ -3,6 +3,7 @@
 import sys
 import time
 import threading
+import queue
 from typing import List, Optional
 
 import serial
@@ -47,12 +48,16 @@ class SerialHandler(QObject):
         self.listening = False
         self.newline_chars = newline_chars
         self.stop_event = threading.Event()
+        self._rx_queue: queue.Queue[str] = queue.Queue()
 
     def connect(self, port: str, baudrate: int):
         self.disconnect()
         self.conn = serial.Serial(port, baudrate=baudrate, timeout=0.1)
         self.listening = True
         self.stop_event.clear()
+        # Clear any stale data from a previous connection
+        with self._rx_queue.mutex:
+            self._rx_queue.queue.clear()
         self.thread = threading.Thread(target=self._retrieve_data_loop, daemon=True)
         self.thread.start()
 
@@ -70,23 +75,24 @@ class SerialHandler(QObject):
         if self.conn and self.conn.is_open:
             self.conn.write(f"{message}{self.newline_chars}".encode("ascii"))
 
-    def get_response(self, timeout: float = 1.0) -> Optional[str]:
-        """Wait for a response from the serial connection within a given timeout."""
+    def query(self, command: str, timeout: float = 1.0) -> Optional[str]:
+        """Send a command and wait for the response within a given timeout.
+
+        Reads from the shared receive queue so it is safe to call while
+        _retrieve_data_loop is running in its background thread.
+        """
         if not self.conn or not self.conn.is_open:
             return None
 
-        start_time = time.time()
-        while time.time() - start_time < timeout:
-            if self.conn.in_waiting:
-                try:
-                    response = self.conn.readline().decode().strip()
-                    if response:
-                        return response
-                except Exception as e:
-                    print(f"Error reading response: {e}")
-                    return None
-            time.sleep(0.01)
-        return None
+        # Discard any stale messages that arrived before this command was sent.
+        with self._rx_queue.mutex:
+            self._rx_queue.queue.clear()
+
+        self.send(command)
+        try:
+            return self._rx_queue.get(timeout=timeout)
+        except queue.Empty:
+            return None
 
     def _retrieve_data_loop(self):
         while self.listening and not self.stop_event.is_set():
@@ -95,6 +101,9 @@ class SerialHandler(QObject):
                     message = self.conn.readline()
                     if message and message.decode().strip():
                         clean_msg = message.decode().strip()
+                        # Put into queue first so query() can consume it,
+                        # then also emit for live UI display.
+                        self._rx_queue.put(clean_msg)
                         self.data_received.emit(clean_msg)
                 except Exception as e:
                     print(f"Error reading from serial {self.index}: {e}")
@@ -237,12 +246,8 @@ class ScriptExecutor(QObject):
 
                     handler = self.serial_handlers[self.current_selser]
 
-                    # Send command
-                    handler.send(command)
                     self._log(f"Checking: {command}", handler.default_color)
-
-                    # Wait for response via handler method (up to 1 second)
-                    response = handler.get_response(timeout=1.0)
+                    response = handler.query(command, timeout=1.0)
 
                     label = f" ({comment})" if comment else ""
                     if response is not None:
