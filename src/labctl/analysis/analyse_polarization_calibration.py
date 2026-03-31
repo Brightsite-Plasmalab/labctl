@@ -1,4 +1,4 @@
-# This script is used to process the data from a polarization filter calibration experiment. It assumes the data is stored in a .sif file with 2D images for each angle of the polarization filter.
+"""Analysis helper for polarization filter calibration experiments."""
 
 import pickle
 
@@ -13,10 +13,25 @@ def analyse_polarization_calibration(
         sif_loc,
         pickle_loc,
         *,
-        indexes = None,
-        deg_fit_lims = None,
-        initial_guess = (100, 10_000, 0.6 * np.pi)
-):
+        indexes=None,
+        deg_fit_lims=None,
+        initial_guess=(100, 10_000, 0.6 * np.pi),
+) -> None:
+    """Fit and visualize polarization calibration response.
+
+    Parameters
+    ----------
+    sif_loc : str | os.PathLike[str]
+        Path to the acquired SIF file.
+    pickle_loc : str | os.PathLike[str]
+        Path to the experiment metadata pickle.
+    indexes : tuple[int, int] | None, optional
+        Optional width slice applied during loading.
+    deg_fit_lims : tuple[float, float] | None, optional
+        Degree limits used for curve fitting.
+    initial_guess : tuple[float, float, float], optional
+        Initial guess for cosine-squared fit parameters.
+    """
     # Load pickle file
     info = pickle.load(open(pickle_loc, "rb"))
 

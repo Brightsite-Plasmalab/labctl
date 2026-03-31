@@ -1,3 +1,5 @@
+"""Convenience plotting helper for camera-delay timesweep experiments."""
+
 import pickle
 
 import numpy as np
@@ -9,8 +11,19 @@ def analyse_camera_timesweep(
         sif_loc,
         pickle_loc,
         *,
-        indexes = None,
-):
+        indexes=None,
+) -> None:
+    """Plot camera-timesweep intensity versus configured delay.
+
+    Parameters
+    ----------
+    sif_loc : str | os.PathLike[str]
+        Path to the acquired SIF file.
+    pickle_loc : str | os.PathLike[str]
+        Path to the experiment metadata pickle.
+    indexes : tuple[int, int] | None, optional
+        Optional width slice applied during loading.
+    """
     # Load pickle file
     info = pickle.load(open(pickle_loc, "rb"))
 

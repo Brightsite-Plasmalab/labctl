@@ -1,3 +1,3 @@
-# DeviceBase now lives in labctl.script.device_base (it's a script primitive).
-# Re-exported here for backward compatibility.
+"""Backward-compatible re-export for :class:`labctl.script.device_base.DeviceBase`."""
+
 from labctl.script.device_base import DeviceBase

@@ -1,3 +1,5 @@
+"""Data loading and reshaping helpers for SIF camera acquisitions."""
+
 import functools
 import pickle
 from collections.abc import Callable

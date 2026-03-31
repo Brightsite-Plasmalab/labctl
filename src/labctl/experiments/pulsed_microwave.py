@@ -1,7 +1,5 @@
 """Pulsed-microwave camera experiment definitions."""
 
-from abc import abstractmethod
-
 from typing_extensions import Unpack
 
 from labctl.script import Script
@@ -10,6 +8,8 @@ import re
 
 
 class PulsedMicrowaveTimesweepKwargs(CameraExperimentKwargs):
+    """Keyword arguments for :class:`PulsedMicrowaveTimesweep`."""
+
     MW_pulse_frequency: int  # Frequency of the microwave pulse
     channel_MW_trigger: str  # Channel of the microwave trigger
     t0: float  # Time delay such that the start of the laser pulse synchronizes with the start of the microwave pulse,
@@ -121,6 +121,13 @@ class PulsedMicrowaveTimesweep(CameraExperiment):
         return delay
 
     def get_config_names(self) -> list[str]:
+        """Return configuration names for each swept microwave delay.
+
+        Returns
+        -------
+        list[str]
+            Delay labels in nanoseconds.
+        """
         return [f"t_{ti*1e9:.3f}_ns".replace(".", "_") for ti in self.delta_t]
 
     def prepare_config(self, cmds: Script, i: int) -> None:
@@ -129,9 +136,11 @@ class PulsedMicrowaveTimesweep(CameraExperiment):
         cmds.pause(1000)
 
     def get_camera_delay_foreground(self, config: int) -> float:
+        """Return foreground camera delay for configuration ``config``."""
         return self.camera_delay_optimum
 
     def get_camera_delay_background(self, config: int) -> float:
+        """Return background camera delay offset by one microwave period."""
         # Take the background one microwave pulse after the laser pulse
         return self.camera_delay_optimum + 1 / self.MW_pulse_frequency
 

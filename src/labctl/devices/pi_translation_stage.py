@@ -1,24 +1,29 @@
+"""Command helpers for PI translation stage controllers."""
+
 from __future__ import annotations
+
 from labctl.devices.base import DeviceBase
 from labctl.script.base import ScriptBase
 
 
 class PiTranslationStage(DeviceBase):
+    """Low-level command wrapper for PI translation stages."""
+
     x_current: float
 
-    def stop(self):
+    def stop(self) -> None:
         """Stop the motion of all axes immediately"""
         self.append("STP")
 
-    def SAI(self):
+    def SAI(self) -> None:
         """Identify axis names"""
         self.append("SAI")
 
-    def reset_error(self):
+    def reset_error(self) -> None:
         """Reset errors"""
         self.append("ERR?")
 
-    def set_reference_mode(self, axis=1, mode="manual"):
+    def set_reference_mode(self, axis: int = 1, mode: str = "manual") -> None:
         """Set the reference mode of the specified axis to manual or reference move"""
         modenum = 0 if mode == "manual" else 1
         if modenum == 1:
@@ -26,20 +31,20 @@ class PiTranslationStage(DeviceBase):
 
         self.append(f"RON {axis:d} {modenum:d}")
 
-    def set_servo(self, axis=1, enable=True):
+    def set_servo(self, axis: int = 1, enable: bool = True) -> None:
         """Enable or disable the servo of the specified axis"""
         self.append(f"SVO {axis:d} {int(enable):d}")
 
-    def set_position(self, axis=1, position=0.0):
+    def set_position(self, axis: int = 1, position: float = 0.0) -> None:
         """Set the position of the specified axis"""
         self.append(f"POS {axis:d} {position:.3f}")
         self.x_current = position
 
-    def get_position(self):
+    def get_position(self) -> None:
         """Get the current position of the specified axis"""
         self.append("POS?")
 
-    def move_to(self, axis=1, position=0.0):
+    def move_to(self, axis: int = 1, position: float = 0.0) -> None:
         """Move the specified axis to the specified position"""
         self.append(f"MOV {axis:d} {position:.3f}")
         dx = abs(position - self.x_current)
@@ -47,7 +52,7 @@ class PiTranslationStage(DeviceBase):
         self.parent.pause(T_wait * 1000)
         self.x_current = position
 
-    def get_last_move(self):
+    def get_last_move(self) -> None:
         """Get the last movement command"""
         self.append("MOV?")
 

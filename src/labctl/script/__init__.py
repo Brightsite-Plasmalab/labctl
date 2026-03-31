@@ -1,3 +1,5 @@
+"""Script-building primitives and concrete script class exports."""
+
 from labctl.script.impl import Script
 from labctl.script.upgrades import DeviceCommands, ScriptInfo
 from labctl.script.meta_command import MetaCommands

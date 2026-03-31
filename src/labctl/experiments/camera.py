@@ -29,6 +29,18 @@ class BackgroundConfiguration(enum.IntEnum):
     BEGIN_END = -4
 
     def make_name_list(self, foreground_num: int) -> list[str]:
+        """Build foreground/background acquisition labels for one config.
+
+        Parameters
+        ----------
+        foreground_num : int
+            Number of foreground acquisitions.
+
+        Returns
+        -------
+        list[str]
+            Sequence containing ``"foreground"`` and ``"background"`` labels.
+        """
         if foreground_num < 0:
             msg = f"foreground_num must be at least 0, got {foreground_num}"
             raise ValueError(msg)
@@ -107,6 +119,8 @@ class BackgroundConfiguration(enum.IntEnum):
 
 
 class CameraExperimentKwargs(BaseExperimentKwargs):
+    """Keyword arguments accepted by :class:`CameraExperiment`."""
+
     n_frames: list[int] | int
     t_exposure: float
     camera_delay_optimum: float
@@ -153,7 +167,7 @@ class CameraExperiment(BaseExperiment):
     - prepare_config: to set the experimental configuration for each measurement.
     - get_config_names: to return the human-readable names of the configurations.
 
-    In addition, your __init__ method should check whether N_frames is a list of integers, with the correct length.
+    In addition, your __init__ method should call `check_N_frames`, to check the n_frames.
     """
 
     pdg: BncPdgCmds
@@ -175,6 +189,31 @@ class CameraExperiment(BaseExperiment):
         camera_reset_time: float = 0.5,
         **kwargs: Unpack[BaseExperimentKwargs],
     ) -> None:
+        """Initialize a camera experiment.
+
+        Parameters
+        ----------
+        n_frames : list[int] | int
+            Number of foreground frames per configuration.
+        t_exposure : float
+            Exposure duration in seconds.
+        camera_delay_optimum : float
+            Foreground camera trigger delay in seconds.
+        camera_delay_background : float, optional
+            Background camera trigger delay in seconds.
+        n_iter : int, optional
+            Number of repeated iterations.
+        laser_frequency : int, optional
+            Laser pulse frequency in Hz.
+        camera_channel : str, optional
+            Camera trigger channel name.
+        background_every : BackgroundConfiguration | int, optional
+            Background acquisition schedule.
+        camera_reset_time : float, optional
+            Wait time after each frame in seconds.
+        **kwargs : Unpack[BaseExperimentKwargs]
+            Base experiment metadata.
+        """
         self.n_iter = n_iter
         if self.n_iter > 1:
             msg = (
@@ -270,6 +309,14 @@ class CameraExperiment(BaseExperiment):
         pass
 
     def make_labctl_script(self) -> Script:
+        """Generate a complete acquisition script for this experiment.
+
+        Returns
+        -------
+        Script
+            Script containing hardware setup, acquisition loop, and summary
+            comments.
+        """
         cmds = self.make_labctl_header()
         self.pdg = cast(BncPdgCmds, list(cmds.devices.keys())[0])
 

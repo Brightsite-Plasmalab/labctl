@@ -1,3 +1,5 @@
+"""Base wrapper for device-specific command helpers."""
+
 from labctl.script.meta_command import MetaCommands
 
 
@@ -12,14 +14,23 @@ class DeviceBase:
     parent: MetaCommands
 
     def __init__(self, parent: MetaCommands) -> None:
+        """Initialize with parent command collector.
+
+        Parameters
+        ----------
+        parent : MetaCommands
+            Parent script-like command collector.
+        """
         self.parent = parent
 
-    def append(self, commands) -> None:
+    def append(self, commands: str | list[str]) -> None:
         """
         Appends commands to the parent command collection.
 
-        Args:
-            commands: The commands to be appended.
+        Parameters
+        ----------
+        commands : str | list[str]
+            Command(s) to append.
         """
         self.parent.append(commands, device=self)
 

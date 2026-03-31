@@ -1,3 +1,5 @@
+"""Legacy combined translation/polarization experiment implementation."""
+
 from labctl.experiments.polarisation import PolarisationFilterExperiment
 from labctl.experiments.translation_stage import TranslationStageExperiment
 
@@ -19,7 +21,16 @@ class PolarisedTranslationStageExperiment(
             for cn_p in config_names_polarisation
         ]
 
-    def check_N_frames(self, expected_length, config_explanation):
+    def check_N_frames(self, expected_length: int, config_explanation: str) -> None:
+        """Validate/expand ``n_frames`` for translation and polarization combinations.
+
+        Parameters
+        ----------
+        expected_length : int
+            Unused legacy parameter kept for compatibility.
+        config_explanation : str
+            Unused legacy parameter kept for compatibility.
+        """
         N_x = len(self.x)
         N_pol = 2
 
@@ -32,7 +43,16 @@ class PolarisedTranslationStageExperiment(
             len(self.n_frames) == N_x * N_pol
         ), "N_frames should have length N_x * N_pol"
 
-    def prepare_config(self, cmds, i):
+    def prepare_config(self, cmds, i: int) -> None:
+        """Apply translation then polarization settings for flattened config index.
+
+        Parameters
+        ----------
+        cmds : Script
+            Script command collector.
+        i : int
+            Flattened configuration index.
+        """
         TranslationStageExperiment.prepare_config(self, cmds, i // 2)
         PolarisationFilterExperiment.prepare_config(self, cmds, i % 2)
 
