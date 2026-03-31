@@ -10,7 +10,6 @@ from labctl.experiments.camera_timesweep import CameraTimesweepExperiment, Camer
 from labctl.experiments.polarisation_sweep import (PolarisationFilterSweepExperiment,
                                                    PolarisationFilterSweepExperimentKwargs)
 from labctl.experiments.polarisation import PolarisationFilterExperiment, PolarisationFilterExperimentKwargs
-from labctl.experiments.laser_Qswitch_timesweep import LaserTimesweepExperiment, LaserTimesweepExperimentKwargs
 from labctl.experiments.translation_stage import TranslationStageExperiment, TranslationStageExperimentKwargs
 from labctl.experiments.raman_2d import Raman2DExperiment, Raman2DExperimentKwargs
 from labctl.experiments.pulsed_microwave import PulsedMicrowaveTimesweep, PulsedMicrowaveTimesweepKwargs
@@ -95,7 +94,6 @@ experiments_plus_kwargs = [
     (CameraTimesweepExperiment, CameraTimesweepExperimentKwargs),
     (PolarisationFilterSweepExperiment, PolarisationFilterSweepExperimentKwargs),
     (PolarisationFilterExperiment, PolarisationFilterExperimentKwargs),
-    (LaserTimesweepExperiment, LaserTimesweepExperimentKwargs),
     (TranslationStageExperiment, TranslationStageExperimentKwargs),
     (Raman2DExperiment, Raman2DExperimentKwargs),
     (PulsedMicrowaveTimesweep, PulsedMicrowaveTimesweepKwargs),

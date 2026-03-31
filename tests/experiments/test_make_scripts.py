@@ -15,7 +15,6 @@ from labctl.experiments.polarised_translation_stage import (
 )
 from labctl.experiments.pulsed_microwave import PulsedMicrowaveTimesweep
 from labctl.experiments.raman_2d import Raman2DExperiment
-from labctl.experiments.laser_Qswitch_timesweep import LaserTimesweepExperiment
 from labctl.experiments.simple import SimpleCameraExperiment
 from labctl.experiments.translation_stage import TranslationStageExperiment
 
@@ -148,14 +147,6 @@ class TestMakeLabctlScript:
     def test_pulsed_microwave_timesweep(self, pulsed_microwave_timesweep):
         result = pulsed_microwave_timesweep.make_labctl_script()
         assert result is not None
-
-    def test_laser_timesweep_not_implemented(self):
-        with pytest.raises((NotImplementedError, TypeError)):
-            LaserTimesweepExperiment(
-                t0=0.0,
-                delta_t=[0.0, 1e-6],
-                **_base_camera_kwargs(n_frames=[1, 1]),
-            )
 
 
 # ---------------------------------------------------------------------------
