@@ -1,4 +1,4 @@
-from typing_extensions import List, Unpack
+from typing_extensions import Unpack
 from labctl.devices import ThorlabsStageCmds
 from labctl.experiments.camera import CameraExperiment, CameraExperimentKwargs
 
@@ -27,7 +27,7 @@ class Raman2DExperiment(CameraExperiment):
             # Other filters are selected by jogging forward
             self.filterstage.forward()
 
-    def get_config_names(self) -> List[str]:
+    def get_config_names(self) -> list[str]:
         return self.filters
 
     def make_labctl_header(self):
@@ -50,4 +50,4 @@ class Raman2DExperiment(CameraExperiment):
 
 
     def make_postprocessing_script(self) -> str:
-        pass
+        pass  # TODO

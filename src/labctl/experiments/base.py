@@ -37,7 +37,7 @@ class BaseExperiment(ABC):
         pass
 
     @abstractmethod
-    def get_config_names(self) -> List[str]:
+    def get_config_names(self) -> list[str]:
         """Get the human-readable names of the configurations."""
         pass
 

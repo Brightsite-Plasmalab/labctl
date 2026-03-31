@@ -3,7 +3,7 @@
 import sys
 import time
 import threading
-from typing import List, Optional
+from typing import Optional
 
 import serial
 from serial.tools.list_ports import comports
@@ -101,14 +101,14 @@ class ScriptExecutor(QObject):
     script_finished = pyqtSignal()
     status_message = pyqtSignal(str, bool)
 
-    def __init__(self, serial_handlers: List[SerialHandler]):
+    def __init__(self, serial_handlers: list[SerialHandler]):
         super().__init__()
         self.serial_handlers = serial_handlers
         self.is_running = False
         self.stop_event = threading.Event()
         self.current_selser = 0
         self.delay_submission = 0.05
-        self.cmd_list: List[str] = []
+        self.cmd_list: list[str] = []
         self.line_number = 0
         self.filename = ""
 
@@ -263,13 +263,13 @@ class ScriptExecutor(QObject):
 
 class ExampleApp(QtWidgets.QMainWindow, labctl_ui.Ui_MainWindow):
     addline = pyqtSignal(str)
-    ports: List[str] = []
-    init_btns: List[QtWidgets.QPushButton] = []
-    send_btns: List[QtWidgets.QPushButton] = []
-    cmd_widgets: List[QtWidgets.QLineEdit] = []
-    port_widgets: List[QtWidgets.QComboBox] = []
-    baud_widgets: List[QtWidgets.QComboBox] = []
-    serial_handlers: List[SerialHandler] = []
+    ports: list[str] = []
+    init_btns: list[QtWidgets.QPushButton] = []
+    send_btns: list[QtWidgets.QPushButton] = []
+    cmd_widgets: list[QtWidgets.QLineEdit] = []
+    port_widgets: list[QtWidgets.QComboBox] = []
+    baud_widgets: list[QtWidgets.QComboBox] = []
+    serial_handlers: list[SerialHandler] = []
     script_executor: Optional[ScriptExecutor] = None
     scriptmode_active: bool = False
 
@@ -298,7 +298,7 @@ class ExampleApp(QtWidgets.QMainWindow, labctl_ui.Ui_MainWindow):
 
         self.addline.connect(self.log_TE.append)
 
-        self.serial_handlers: List[SerialHandler] = [
+        self.serial_handlers: list[SerialHandler] = [
             SerialHandler(0, "ff0000"),
             SerialHandler(1, "cccc00"),
             SerialHandler(2, "0000ff"),
