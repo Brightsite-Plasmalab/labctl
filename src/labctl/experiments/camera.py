@@ -1,9 +1,9 @@
 import math
 import enum
-from typing import Unpack
+from typing import Unpack, cast
 import warnings
 
-from typing_extensions import cast, NotRequired
+from typing_extensions import NotRequired
 import numpy as np
 
 from labctl.script import Script
@@ -59,11 +59,14 @@ class BackgroundConfiguration(enum.IntEnum):
         names = self.make_name_list(foreground_num)
         return len(names)
 
-    def index_foreground(self, foreground_num) -> list[int]:
+    def background_count(self, foreground_num) -> int:
+        return self.measurement_count(foreground_num) - foreground_num
+
+    def index_foreground(self, foreground_num) -> np.ndarray:
         names = self.make_name_list(foreground_num)
         return (np.asarray(names) == "foreground").nonzero()[0].astype(int)
 
-    def index_background(self, foreground_num) -> list[int]:
+    def index_background(self, foreground_num) -> np.ndarray:
         names = self.make_name_list(foreground_num)
         return (np.asarray(names) == "background").nonzero()[0].astype(int)
 
@@ -119,6 +122,7 @@ class CameraExperiment(BaseExperiment):
     """
 
     pdg: BncPdgCmds
+    n_frames: list[int]
 
     def __init__(
         self,
@@ -155,7 +159,6 @@ class CameraExperiment(BaseExperiment):
         if type(self) is CameraExperiment:
             self.check_N_frames(1, "")
         super().__init__(**kwargs)
-        self.n_frames: list[int]
 
     def check_N_frames(self, expected_length: int, config_explanation):
         """Check that n_frames has the expected length."""
@@ -311,31 +314,39 @@ class CameraExperiment(BaseExperiment):
 
         return cmds
 
-    def get_config_indices(self):
+    def get_config_indices_full(self):
         """
         Returns a list that maps the configurations to the indices of the foreground and background frames in the acquired data.
+        It keeps the indices from different iterations seperate.
         [ (fg_idx_config1, bg_idx_config1), (fg_idx_config2, bg_idx_config2), ... ],
         """
-        # Initialize a list of empty indices (fg and bg) for each config
-        idx = [(np.array([], dtype=int),) * 2] * len(self.n_frames)
+        idx = [[] for _ in range(self.n_iter)]
+
         running_total = 0
         for i in range(self.n_iter):
             for j, N_frames_j in enumerate(self.n_frames):
                 # For each config, get the indices of the foreground and background frames for this iteration, and add the running total to get the indices in the full acquired data
-                fg_idx = (
-                    self.background_every.index_foreground(N_frames_j) + running_total
-                )
-                bg_idx = (
-                    self.background_every.index_background(N_frames_j) + running_total
-                )
+                fg_idx = self.background_every.index_foreground(N_frames_j) + running_total
+                bg_idx = self.background_every.index_background(N_frames_j) + running_total
 
                 # Append the indices for this iteration to the total indices for this config
-                idx[j] = (
-                    np.concatenate((idx[j][0], fg_idx), dtype=int),
-                    np.concatenate((idx[j][1], bg_idx), dtype=int),
-                )
-                running_total += len(fg_idx) + len(bg_idx)
+                idx[i].append((fg_idx, bg_idx))
 
+                running_total += len(fg_idx) + len(bg_idx)
+        return idx
+
+    def get_config_indices(self):
+        """
+        Returns a list that maps the configurations to the indices of the foreground and background frames in the acquired data.
+        It groups together the indices from different iterations.
+        [ (fg_idx_config1, bg_idx_config1), (fg_idx_config2, bg_idx_config2), ... ],
+        """
+        full_indices = self.get_config_indices_full()
+        idx = [[] for _ in range(len(self.n_frames))]
+        for j in range(len(self.n_frames)):
+            for k in (0, 1):
+                vals = [full_indices[i][j][k] for i in range(self.n_iter)]
+                idx[j].append(np.concatenate(vals))
         return idx
 
     def get_config_index_dict(self):
@@ -365,6 +376,7 @@ class CameraExperiment(BaseExperiment):
 
         info_obj = {
             "indices": self.get_config_indices(),
+            "indices_full": self.get_config_indices_full(),
             "configs": self.get_config_index_dict(),
             # Backwards compatibility
             **dict(
