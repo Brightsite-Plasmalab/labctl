@@ -1,4 +1,4 @@
-from typing_extensions import Unpack, List
+from typing_extensions import Unpack
 
 from labctl.devices import PiTranslationStage
 from labctl.script import Script
@@ -12,7 +12,7 @@ class TranslationStageExperimentKwargs(CameraExperimentKwargs):
 class TranslationStageExperiment(CameraExperiment):
     translationstage: PiTranslationStage
 
-    def __init__(self, x: list[float] = None, **kwargs):
+    def __init__(self, x: list[float] = None, **kwargs: Unpack[CameraExperimentKwargs]):
         if x is None:
             msg = "x must be provided as a keyword argument"
             raise ValueError(msg)
@@ -39,7 +39,7 @@ class TranslationStageExperiment(CameraExperiment):
         self.translationstage.set_servo(1, enable=True)
         self.translationstage.set_position(1, position=0.0)
 
-    def get_config_names(self) -> List[str]:
+    def get_config_names(self) -> list[str]:
         return [f"x_{xi:.3f}mm".replace(".", "_") for xi in self.x]
 
     def prepare_config(self, cmds, i):
