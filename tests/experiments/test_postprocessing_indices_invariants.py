@@ -11,14 +11,16 @@ from labctl.experiments.translation_stage import TranslationStageExperiment
 
 
 def _build_experiment_instance(
-    experiment_class: type, background_every: BackgroundConfiguration
+    experiment_class: type,
+    background_every: BackgroundConfiguration,
+    n_iter: int = 1,
 ):
     exp = object.__new__(experiment_class)
 
     exp.file_name = "test"
     exp.short_explanation = ""
     exp.author = ""
-    exp.n_iter = 1
+    exp.n_iter = n_iter
     exp.t_exposure = 0.1
     exp.camera_delay_optimum = 0.0
     exp.camera_delay_background = 0.0
@@ -37,6 +39,7 @@ def _build_experiment_instance(
         exp.n_frames = [1, 2]
         exp.alpha_ver = 0.0
         exp.alpha_hor = 90.0
+        exp.alpha = [exp.alpha_ver, exp.alpha_hor]
     elif experiment_class is Raman2DExperiment:
         exp.n_frames = [2, 1]
         exp.filters = ["f0", "f1"]
@@ -69,6 +72,22 @@ def _expected_indices_for_first_iteration(exp) -> list[tuple[np.ndarray, np.ndar
     return expected
 
 
+def _expected_indices_full(exp) -> list[list[tuple[np.ndarray, np.ndarray]]]:
+    expected: list[list[tuple[np.ndarray, np.ndarray]]] = []
+    running_total = 0
+    for _ in range(exp.n_iter):
+        iteration: list[tuple[np.ndarray, np.ndarray]] = []
+        for frames in exp.n_frames:
+            names = exp.background_every.make_name_list(frames)
+            names_array = np.asarray(names)
+            foreground = np.where(names_array == "foreground")[0] + running_total
+            background = np.where(names_array == "background")[0] + running_total
+            iteration.append((foreground, background))
+            running_total += len(names)
+        expected.append(iteration)
+    return expected
+
+
 @pytest.mark.parametrize(
     "experiment_class",
     [
@@ -83,7 +102,14 @@ def _expected_indices_for_first_iteration(exp) -> list[tuple[np.ndarray, np.ndar
 )
 @pytest.mark.parametrize(
     "background_every",
-    [BackgroundConfiguration.NONE, BackgroundConfiguration.BEGIN_END],
+    [
+        BackgroundConfiguration.NONE,
+        BackgroundConfiguration.BEGIN,
+        BackgroundConfiguration.END,
+        BackgroundConfiguration.BEGIN_MIDDLE_END,
+        BackgroundConfiguration.BEGIN_END,
+        BackgroundConfiguration.EVERY_FRAME,
+    ],
 )
 def test_postprocessing_indices_are_well_formed(
     experiment_class: type, background_every: BackgroundConfiguration
@@ -93,15 +119,21 @@ def test_postprocessing_indices_are_well_formed(
     info = exp.make_postprocessing_info()
 
     assert "indices" in info
+    assert "indices_full" in info
     assert info["n_iter"] == exp.n_iter
     assert info["n_frames"] == exp.n_frames
 
     indices = info["indices"]
     assert isinstance(indices, list)
-    assert len(indices) == exp.n_iter
+    # `indices` groups all iterations per config.
+    assert len(indices) == len(exp.n_frames)
+
+    indices_full = info["indices_full"]
+    assert isinstance(indices_full, list)
+    assert len(indices_full) == exp.n_iter
 
     expected = _expected_indices_for_first_iteration(exp)
-    first_iteration = indices
+    first_iteration = indices_full[0]
     assert len(first_iteration) == len(exp.n_frames)
 
     total_measurements = sum(
@@ -126,3 +158,100 @@ def test_postprocessing_indices_are_well_formed(
         all_indices = np.concatenate((foreground_idx, background_idx))
         assert np.all(all_indices >= 0)
         assert np.all(all_indices < total_measurements)
+
+
+@pytest.mark.parametrize(
+    "experiment_class",
+    [
+        CameraTimesweepExperiment,
+        PolarisationFilterSweepExperiment,
+        PolarisationFilterExperiment,
+        Raman2DExperiment,
+        TranslationStageExperiment,
+        PulsedMicrowaveTimesweep,
+    ],
+    ids=lambda cls: cls.__name__,
+)
+def test_indices_and_indices_full_are_consistent_for_single_iteration(
+    experiment_class: type,
+):
+    exp = _build_experiment_instance(
+        experiment_class,
+        BackgroundConfiguration.BEGIN_END,
+        n_iter=1,
+    )
+    info = exp.make_postprocessing_info()
+
+    assert len(info["indices_full"]) == 1
+    assert len(info["indices"]) == len(exp.n_frames)
+
+    for config_index in range(len(exp.n_frames)):
+        np.testing.assert_array_equal(
+            info["indices"][config_index][0],
+            info["indices_full"][0][config_index][0],
+        )
+        np.testing.assert_array_equal(
+            info["indices"][config_index][1],
+            info["indices_full"][0][config_index][1],
+        )
+
+
+@pytest.mark.parametrize(
+    "experiment_class",
+    [
+        CameraTimesweepExperiment,
+        PolarisationFilterSweepExperiment,
+        PolarisationFilterExperiment,
+        Raman2DExperiment,
+        TranslationStageExperiment,
+        PulsedMicrowaveTimesweep,
+    ],
+    ids=lambda cls: cls.__name__,
+)
+def test_postprocessing_indices_are_well_formed_for_multiple_iterations(
+    experiment_class: type,
+):
+    exp = _build_experiment_instance(
+        experiment_class,
+        BackgroundConfiguration.BEGIN_END,
+        n_iter=2,
+    )
+    info = exp.make_postprocessing_info()
+
+    indices = info["indices"]
+    indices_full = info["indices_full"]
+    expected_full = _expected_indices_full(exp)
+
+    assert len(indices_full) == exp.n_iter
+    assert len(indices) == len(exp.n_frames)
+
+    total_measurements = exp.n_iter * sum(
+        exp.background_every.measurement_count(frames) for frames in exp.n_frames
+    )
+
+    for iter_index in range(exp.n_iter):
+        assert len(indices_full[iter_index]) == len(exp.n_frames)
+        for config_index, (foreground_idx, background_idx) in enumerate(indices_full[iter_index]):
+            assert np.all(np.diff(foreground_idx) >= 0)
+            assert np.all(np.diff(background_idx) >= 0)
+            assert np.intersect1d(foreground_idx, background_idx).size == 0
+
+            expected_foreground, expected_background = expected_full[iter_index][config_index]
+            np.testing.assert_array_equal(foreground_idx, expected_foreground)
+            np.testing.assert_array_equal(background_idx, expected_background)
+
+            all_indices = np.concatenate((foreground_idx, background_idx))
+            assert np.all(all_indices >= 0)
+            assert np.all(all_indices < total_measurements)
+
+    # Grouped indices must equal concatenation over iterations for each config.
+    for config_index in range(len(exp.n_frames)):
+        expected_foreground = np.concatenate(
+            [indices_full[i][config_index][0] for i in range(exp.n_iter)]
+        )
+        expected_background = np.concatenate(
+            [indices_full[i][config_index][1] for i in range(exp.n_iter)]
+        )
+        np.testing.assert_array_equal(indices[config_index][0], expected_foreground)
+        np.testing.assert_array_equal(indices[config_index][1], expected_background)
+

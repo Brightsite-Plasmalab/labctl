@@ -1,0 +1,163 @@
+# # Configuration file for lab automation
+# #   Title:  
+# #   Date:   2026-03-31__13:15:13
+# #   Author: Thijs
+# # [N_iter, [N_reps]] = [1, [10, 5]]
+#SELSER 1
+0ho0
+#WAIT 1500
+0ho0
+#WAIT 1500
+
+#SELSER 0
+# # Channel G - gate
+:PULS7:STAT ON
+:PULS7:DELAY 0.0000000000
+:PULS7:SYNC T0
+:PULS7:WIDT 0.0333333333
+:PULS7:POL NORM
+:PULS7:CMOD SING
+:PULS3:CGAT LOW
+:PULS3:CMOD BURS
+:PULS3:STAT ON
+# # Selecting config 0
+# Selecting vertical rotation
+# # Selecting rotation 0: 22.840 degrees
+#SELSER 1
+0ma00002387
+#WAIT 414
+#SELSER 0
+:PULS3:BCO 1502
+# Acquiring: config 1/2, background (1/11), iteration 1/1
+:PULS3:DELAY 0.0000000000
+#WAIT 50
+*ARM
+#WAIT 50017
+# # Wait for the camera to reset
+#WAIT 500
+# Acquiring: config 1/2, foreground (2/11), iteration 1/1
+:PULS3:DELAY 0.0000004620
+#WAIT 50
+*ARM
+#WAIT 50017
+# # Wait for the camera to reset
+#WAIT 500
+# Acquiring: config 1/2, foreground (3/11), iteration 1/1
+:PULS3:DELAY 0.0000004620
+#WAIT 50
+*ARM
+#WAIT 50017
+# # Wait for the camera to reset
+#WAIT 500
+# Acquiring: config 1/2, foreground (4/11), iteration 1/1
+:PULS3:DELAY 0.0000004620
+#WAIT 50
+*ARM
+#WAIT 50017
+# # Wait for the camera to reset
+#WAIT 500
+# Acquiring: config 1/2, foreground (5/11), iteration 1/1
+:PULS3:DELAY 0.0000004620
+#WAIT 50
+*ARM
+#WAIT 50017
+# # Wait for the camera to reset
+#WAIT 500
+# Acquiring: config 1/2, foreground (6/11), iteration 1/1
+:PULS3:DELAY 0.0000004620
+#WAIT 50
+*ARM
+#WAIT 50017
+# # Wait for the camera to reset
+#WAIT 500
+# Acquiring: config 1/2, foreground (7/11), iteration 1/1
+:PULS3:DELAY 0.0000004620
+#WAIT 50
+*ARM
+#WAIT 50017
+# # Wait for the camera to reset
+#WAIT 500
+# Acquiring: config 1/2, foreground (8/11), iteration 1/1
+:PULS3:DELAY 0.0000004620
+#WAIT 50
+*ARM
+#WAIT 50017
+# # Wait for the camera to reset
+#WAIT 500
+# Acquiring: config 1/2, foreground (9/11), iteration 1/1
+:PULS3:DELAY 0.0000004620
+#WAIT 50
+*ARM
+#WAIT 50017
+# # Wait for the camera to reset
+#WAIT 500
+# Acquiring: config 1/2, foreground (10/11), iteration 1/1
+:PULS3:DELAY 0.0000004620
+#WAIT 50
+*ARM
+#WAIT 50017
+# # Wait for the camera to reset
+#WAIT 500
+# Acquiring: config 1/2, foreground (11/11), iteration 1/1
+:PULS3:DELAY 0.0000004620
+#WAIT 50
+*ARM
+#WAIT 50017
+# # Wait for the camera to reset
+#WAIT 500
+# # Selecting config 1
+# Selecting horizontal rotation
+# # Selecting rotation 1: 112.840 degrees
+#SELSER 1
+0ma0000AF87
+#WAIT 864
+#SELSER 0
+:PULS3:BCO 1502
+# Acquiring: config 2/2, background (1/6), iteration 1/1
+:PULS3:DELAY 0.0000000000
+#WAIT 50
+*ARM
+#WAIT 50017
+# # Wait for the camera to reset
+#WAIT 500
+# Acquiring: config 2/2, foreground (2/6), iteration 1/1
+:PULS3:DELAY 0.0000004620
+#WAIT 50
+*ARM
+#WAIT 50017
+# # Wait for the camera to reset
+#WAIT 500
+# Acquiring: config 2/2, foreground (3/6), iteration 1/1
+:PULS3:DELAY 0.0000004620
+#WAIT 50
+*ARM
+#WAIT 50017
+# # Wait for the camera to reset
+#WAIT 500
+# Acquiring: config 2/2, foreground (4/6), iteration 1/1
+:PULS3:DELAY 0.0000004620
+#WAIT 50
+*ARM
+#WAIT 50017
+# # Wait for the camera to reset
+#WAIT 500
+# Acquiring: config 2/2, foreground (5/6), iteration 1/1
+:PULS3:DELAY 0.0000004620
+#WAIT 50
+*ARM
+#WAIT 50017
+# # Wait for the camera to reset
+#WAIT 500
+# Acquiring: config 2/2, foreground (6/6), iteration 1/1
+:PULS3:DELAY 0.0000004620
+#WAIT 50
+*ARM
+#WAIT 50017
+# # Wait for the camera to reset
+#WAIT 500
+# # Total wait: 14.4min
+# # NB: Put the PDG in burst mode
+# # Kinetic acquisition settings:
+# # 	Exposure time:		50.017s
+# # 	Accumulation count:	1
+# # 	Frame count:		17
