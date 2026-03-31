@@ -1,4 +1,3 @@
-from typing_extensions import List
 from labctl.experiments.polarisation import PolarisationFilterExperiment
 from labctl.experiments.translation_stage import TranslationStageExperiment
 
@@ -11,7 +10,7 @@ class PolarisedTranslationStageExperiment(
     It will run through all combinations of the translation stage positions and polarisation filter angles.
     """
 
-    def get_config_names(self) -> List[str]:
+    def get_config_names(self) -> list[str]:
         config_names_translation = TranslationStageExperiment.get_config_names(self)
         config_names_polarisation = PolarisationFilterExperiment.get_config_names(self)
         return [
