@@ -1,3 +1,5 @@
+"""Base abstractions for experiment script generation and persistence."""
+
 import os
 import pathlib
 import pickle as pkl
@@ -8,6 +10,8 @@ from typing_extensions import NotRequired, List
 
 
 class BaseExperimentKwargs(TypedDict):
+    """Shared keyword arguments accepted by experiment constructors."""
+
     dest_folder: os.PathLike | str
     file_name: str
     author: NotRequired[str]
@@ -15,13 +19,28 @@ class BaseExperimentKwargs(TypedDict):
 
 
 class BaseExperiment(ABC):
+    """Abstract base class for all experiments."""
+
     def __init__(
         self,
         dest_folder: os.PathLike | str,
         file_name: str,
         author: str = "",
         short_explanation: str = "",
-    ):
+    ) -> None:
+        """Initialize common experiment metadata.
+
+        Parameters
+        ----------
+        dest_folder : os.PathLike | str
+            Output folder for generated scripts and metadata.
+        file_name : str
+            Base name used for output artifacts.
+        author : str, optional
+            Author name written to metadata.
+        short_explanation : str, optional
+            Human-readable experiment description.
+        """
         self.author = author
         self.dest_folder = pathlib.Path(dest_folder)
         self.file_name = file_name
@@ -32,7 +51,7 @@ class BaseExperiment(ABC):
         pass
 
     @abstractmethod
-    def prepare_config(self, cmds, i):
+    def prepare_config(self, cmds, i: int) -> None:
         """Prepares experimental configuration i."""
         pass
 
@@ -41,7 +60,14 @@ class BaseExperiment(ABC):
         """Get the human-readable names of the configurations."""
         pass
 
-    def make_postprocessing_info(self):
+    def make_postprocessing_info(self) -> dict[str, object]:
+        """Build common postprocessing metadata.
+
+        Returns
+        -------
+        dict[str, object]
+            Base metadata shared by all experiments.
+        """
         info_obj = {
             "file_name": self.file_name,
             "short_explanation": self.short_explanation,
@@ -55,7 +81,19 @@ class BaseExperiment(ABC):
     def make_postprocessing_script(self) -> str:
         pass
 
-    def save_labctl_script(self, dest=None):
+    def save_labctl_script(self, dest: os.PathLike | str | None = None):
+        """Generate and persist the labctl script.
+
+        Parameters
+        ----------
+        dest : os.PathLike | str | None, optional
+            Destination path. Defaults to ``<dest_folder>/<file_name>.labctl``.
+
+        Returns
+        -------
+        os.PathLike | str
+            Path where the script was written.
+        """
         if dest is None:
             dest = self.dest_folder / (self.file_name + ".labctl")
 
@@ -64,7 +102,20 @@ class BaseExperiment(ABC):
 
         return dest
 
-    def save_postprocessing_script(self, dest=None):
+    def save_postprocessing_script(self, dest: os.PathLike | str | None = None):
+        """Generate and persist the postprocessing script.
+
+        Parameters
+        ----------
+        dest : os.PathLike | str | None, optional
+            Destination path. Defaults to
+            ``<dest_folder>/<file_name>_process.py``.
+
+        Returns
+        -------
+        os.PathLike | str
+            Path where the script was written.
+        """
         if dest is None:
             dest = self.dest_folder / (self.file_name + "_process.py")
 
@@ -74,7 +125,22 @@ class BaseExperiment(ABC):
 
         return dest
 
-    def save_postprocessing_info(self, dest_info=None):
+    def save_postprocessing_info(
+        self,
+        dest_info: os.PathLike | str | None = None,
+    ):
+        """Persist postprocessing metadata as a pickle file.
+
+        Parameters
+        ----------
+        dest_info : os.PathLike | str | None, optional
+            Destination path. Defaults to ``<dest_folder>/<file_name>.pkl``.
+
+        Returns
+        -------
+        os.PathLike | str
+            Path where metadata was written.
+        """
         if dest_info is None:
             dest_info = self.dest_folder / (self.file_name + ".pkl")
         info_obj = self.make_postprocessing_info()
@@ -84,7 +150,8 @@ class BaseExperiment(ABC):
 
         return dest_info
 
-    def save_all(self):
+    def save_all(self) -> None:
+        """Save script, metadata, and postprocessing helper script."""
         self.save_labctl_script()
         self.save_postprocessing_info()
         self.save_postprocessing_script()

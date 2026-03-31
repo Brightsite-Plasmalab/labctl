@@ -1,3 +1,10 @@
+"""Camera-based experiment primitives and indexing helpers.
+
+This module contains the generic camera experiment implementation, background
+acquisition scheduling, and metadata/index generation used by downstream
+postprocessing.
+"""
+
 import math
 import enum
 from typing import Unpack, cast
@@ -12,6 +19,8 @@ from labctl.experiments.base import BaseExperiment, BaseExperimentKwargs
 
 
 class BackgroundConfiguration(enum.IntEnum):
+    """Background acquisition schedules for camera experiments."""
+
     EVERY_FRAME = 1
     NONE = 0
     BEGIN = -1
@@ -55,18 +64,44 @@ class BackgroundConfiguration(enum.IntEnum):
 
         return list_out
 
-    def measurement_count(self, foreground_num) -> int:
+    def measurement_count(self, foreground_num: int) -> int:
+        """Return total measurements for a foreground count.
+
+        Parameters
+        ----------
+        foreground_num : int
+            Number of foreground acquisitions.
+
+        Returns
+        -------
+        int
+            Total acquisitions including background frames.
+        """
         names = self.make_name_list(foreground_num)
         return len(names)
 
-    def background_count(self, foreground_num) -> int:
+    def background_count(self, foreground_num: int) -> int:
+        """Return number of scheduled background frames.
+
+        Parameters
+        ----------
+        foreground_num : int
+            Number of foreground acquisitions.
+
+        Returns
+        -------
+        int
+            Number of background acquisitions.
+        """
         return self.measurement_count(foreground_num) - foreground_num
 
-    def index_foreground(self, foreground_num) -> np.ndarray:
+    def index_foreground(self, foreground_num: int) -> np.ndarray:
+        """Return foreground indices in one acquisition block."""
         names = self.make_name_list(foreground_num)
         return (np.asarray(names) == "foreground").nonzero()[0].astype(int)
 
-    def index_background(self, foreground_num) -> np.ndarray:
+    def index_background(self, foreground_num: int) -> np.ndarray:
+        """Return background indices in one acquisition block."""
         names = self.make_name_list(foreground_num)
         return (np.asarray(names) == "background").nonzero()[0].astype(int)
 
@@ -139,7 +174,7 @@ class CameraExperiment(BaseExperiment):
         ) = BackgroundConfiguration.EVERY_FRAME,
         camera_reset_time: float = 0.5,
         **kwargs: Unpack[BaseExperimentKwargs],
-    ):
+    ) -> None:
         self.n_iter = n_iter
         if self.n_iter > 1:
             msg = (
@@ -160,7 +195,7 @@ class CameraExperiment(BaseExperiment):
             self.check_N_frames(1, "")
         super().__init__(**kwargs)
 
-    def check_N_frames(self, expected_length: int, config_explanation):
+    def check_N_frames(self, expected_length: int, config_explanation: str) -> None:
         """Check that n_frames has the expected length."""
         if isinstance(self.n_frames, int):
             self.n_frames = [self.n_frames] * expected_length
@@ -184,11 +219,11 @@ class CameraExperiment(BaseExperiment):
 
         return cmds
 
-    def prepare_experiment(self, cmds: Script):
+    def prepare_experiment(self, cmds: Script) -> None:
         """Prepare the experiment. Inherit this method to add more commands."""
         pass
 
-    def get_camera_delay(self, config, version):
+    def get_camera_delay(self, config: int, version: int | str) -> float:
         """Get the camera delay for a specific configuration, frame, and version."""
         if version == 0 or version == "foreground":
             # foreground
@@ -200,13 +235,20 @@ class CameraExperiment(BaseExperiment):
             msg = f"Unknown version, should be 0/1 or 'foreground'/'background', got {version}"
             raise ValueError(msg)
 
-    def get_camera_delay_foreground(self, config):
+    def get_camera_delay_foreground(self, config: int) -> float:
         return self.camera_delay_optimum
 
-    def get_camera_delay_background(self, config):
+    def get_camera_delay_background(self, config: int) -> float:
         return self.camera_delay_background
 
-    def perform_measurement(self, cmds: Script, iteration, config, frame, version):
+    def perform_measurement(
+        self,
+        cmds: Script,
+        iteration: int,
+        config: int,
+        frame: int,
+        version: int | str,
+    ) -> None:
         """Perform a single measurement."""
         num_meas = self.background_every.measurement_count(self.n_frames[config])
         cmds.append(f"# Acquiring: config {config+1:d}/{len(self.n_frames):d}, {version} ({frame + 1:d}/{num_meas:d}), "
@@ -223,7 +265,7 @@ class CameraExperiment(BaseExperiment):
         cmds.comment("# Wait for the camera to reset")
         cmds.pause(self.camera_reset_time * 1e3)
 
-    def shutdown_experiment(self):
+    def shutdown_experiment(self) -> None:
         """Shutdown the experiment. Inherit this method to add more commands."""
         pass
 
@@ -314,7 +356,7 @@ class CameraExperiment(BaseExperiment):
 
         return cmds
 
-    def get_config_indices_full(self):
+    def get_config_indices_full(self) -> list[list[tuple[np.ndarray, np.ndarray]]]:
         """
         Returns a list that maps the configurations to the indices of the foreground and background frames in the acquired data.
         It keeps the indices from different iterations seperate.
@@ -335,7 +377,7 @@ class CameraExperiment(BaseExperiment):
                 running_total += len(fg_idx) + len(bg_idx)
         return idx
 
-    def get_config_indices(self):
+    def get_config_indices(self) -> list[list[np.ndarray]]:
         """
         Returns a list that maps the configurations to the indices of the foreground and background frames in the acquired data.
         It groups together the indices from different iterations.
@@ -349,7 +391,7 @@ class CameraExperiment(BaseExperiment):
                 idx[j].append(np.concatenate(vals))
         return idx
 
-    def get_config_index_dict(self):
+    def get_config_index_dict(self) -> dict[str, dict[str, np.ndarray]]:
         """
         Returns a dictionary that maps the config names to the indices of the foreground and background frames in the acquired data.
         { config_name: (fg_idx_config_iter1, bg_idx_config_iter1), ... },
@@ -366,7 +408,7 @@ class CameraExperiment(BaseExperiment):
 
         return idx_dict
 
-    def make_postprocessing_info(self):
+    def make_postprocessing_info(self) -> dict[str, object]:
         """
         This function creates a dictionary with all necessary information about the experiment to do the postprocessing.
         Most importantly, it creates a list of indices for the foreground and background frames for each config and iteration, which can be used to separate the data during postprocessing.
@@ -400,7 +442,9 @@ class CameraExperiment(BaseExperiment):
 
     @staticmethod
     def postprocess(
-        f_data, f_pickle=None, info=None
+        f_data,
+        f_pickle=None,
+        info=None,
     ) -> dict[str, tuple[np.ndarray, np.ndarray, np.ndarray]]:
         import pickle as pkl
         from toddler.data.spectrum import Spectrum
@@ -444,7 +488,7 @@ class CameraExperiment(BaseExperiment):
 
         return results
 
-    def make_postprocessing_script(self):
+    def make_postprocessing_script(self) -> str:
         # TODO: Currently, this will not work! Maybe remove and bundle in package
         code = """
 # IMPORTANT: THIS IS NOT CORRECT CODE FOR CURRENT VERSION!!

@@ -1,3 +1,5 @@
+"""Pulsed-microwave camera experiment definitions."""
+
 from abc import abstractmethod
 
 from typing_extensions import Unpack
@@ -36,7 +38,7 @@ class PulsedMicrowaveTimesweep(CameraExperiment):
         MW_pulse_frequency: int,
         channel_MW_trigger: str,
         **kwargs: Unpack[CameraExperimentKwargs],
-    ):
+    ) -> None:
         self.t0 = t0
         self.delta_t = delta_t
         self.channel_MW_trigger = channel_MW_trigger  # Should be in [A, B, ..., H]
@@ -81,7 +83,14 @@ class PulsedMicrowaveTimesweep(CameraExperiment):
         if type(self) is PulsedMicrowaveTimesweep:
             self.check_N_frames(len(self.delta_t), " One configuration for each time delay value.")
 
-    def make_postprocessing_info(self):
+    def make_postprocessing_info(self) -> dict[str, object]:
+        """Build postprocessing metadata for microwave delay sweeps.
+
+        Returns
+        -------
+        dict[str, object]
+            Metadata dictionary including timing sweep variables.
+        """
         info = super().make_postprocessing_info()
         info.update(
             {
@@ -93,7 +102,19 @@ class PulsedMicrowaveTimesweep(CameraExperiment):
         )
         return info
 
-    def get_mw_delay(self, i):
+    def get_mw_delay(self, i: int) -> float:
+        """Return microwave trigger delay for configuration ``i``.
+
+        Parameters
+        ----------
+        i : int
+            Configuration index.
+
+        Returns
+        -------
+        float
+            Trigger delay in seconds.
+        """
         delay = self.t0 - self.delta_t[i]
         if delay < -900e-6:
             delay += 1 / self.MW_pulse_frequency
@@ -102,18 +123,18 @@ class PulsedMicrowaveTimesweep(CameraExperiment):
     def get_config_names(self) -> list[str]:
         return [f"t_{ti*1e9:.3f}_ns".replace(".", "_") for ti in self.delta_t]
 
-    def prepare_config(self, cmds: Script, i):
+    def prepare_config(self, cmds: Script, i: int) -> None:
         """Prepares experimental configuration i."""
         self.pdg.delay(self.channel_MW_trigger_int, self.get_mw_delay(i))
         cmds.pause(1000)
 
-    def get_camera_delay_foreground(self, config):
+    def get_camera_delay_foreground(self, config: int) -> float:
         return self.camera_delay_optimum
 
-    def get_camera_delay_background(self, config):
+    def get_camera_delay_background(self, config: int) -> float:
         # Take the background one microwave pulse after the laser pulse
         return self.camera_delay_optimum + 1 / self.MW_pulse_frequency
 
-    def shutdown_experiment(self):
+    def shutdown_experiment(self) -> None:
         """Shutdown the experiment. Inherit this method to add more commands."""
         pass
