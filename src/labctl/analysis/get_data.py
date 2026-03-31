@@ -24,7 +24,7 @@ def _get_data(
     data : np.ndarray
         Raw image data loaded from the SIF file, indexed by frame number.
     info : dict
-        Experiment metadata dictionary containing the ``'indices'`` mapping.
+        Experiment metadata dictionary containing the ``'indices_full'`` mapping.
     fore_back_ground : int
         Selects signal (``0``) or background (``1``) frame indices.
     config_index: int
@@ -39,7 +39,7 @@ def _get_data(
     np.ndarray
         Squeezed image array for the requested frame.
     """
-    indexes = info['indices'][iter_index][config_index][fore_back_ground][frame_index]
+    indexes = info['indices_full'][iter_index][config_index][fore_back_ground][frame_index]
     return np.squeeze(data[indexes, :, :])
 
 
@@ -272,7 +272,8 @@ def get_data(
             Selects signal (``0``) or background (``1``) frames.
         """
         nonlocal new_image_size
-        for i, frames in enumerate(info["n_frames"]):
+        for i in range(config_num):
+            frames = len(info["indices_full"][index_iter][i][indexer])
             acc_signal = np.zeros((frames, *new_image_size))
             for j in range(frames):
                 data = _get_data(img_data, info, indexer, i, j, index_iter)
@@ -417,7 +418,7 @@ def get_data_2D(
         height_indexes: tuple[int, int] | None = None,
         iter_accumulator: _acc_typehint | None = None,
         height_accumulator: _acc_typehint = 'sum',
-) -> np.ndarray:
+) -> tuple[np.ndarray, np.ndarray | None]:
     """
     Load experiment data and collapse the height axis into a 1-D spectrum per
     pixel column.
@@ -453,12 +454,14 @@ def get_data_2D(
         *iter_accumulator* is provided and on the number of iterations.
     """
     # data shape ((n_iter,) config_num, (n_fames,) height, width
-    data = get_data(sif_loc, pickle_loc, width_indexes=width_indexes, height_indexes=height_indexes, 
-                    iter_accumulator=iter_accumulator)
+    data, background = get_data(sif_loc, pickle_loc, width_indexes=width_indexes, height_indexes=height_indexes,
+                                iter_accumulator=iter_accumulator)
 
     accumulator_func = _get_accumulator(height_accumulator, axis=-2, name="height_accumulator")
     # new shape ((n_iter,) config_num, (n_fames,) width
-    return accumulator_func(data)
+    collapsed_data = accumulator_func(data)
+    collapsed_background = accumulator_func(background) if background is not None else None
+    return collapsed_data, collapsed_background
 
 
 def get_wavelengths(sif_loc, width_indexes=None):
