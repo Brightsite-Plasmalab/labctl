@@ -1,6 +1,6 @@
-import { getLabctlManager } from '$lib/server/labctl-manager';
+import { getLabctlManager } from '$lib/server/labctl-manager.js';
 
-import { jsonState } from '$lib/server/http';
+import { jsonState } from '$lib/server/http.js';
 
 export async function GET() {
 	const manager = getLabctlManager();

@@ -1,5 +1,5 @@
-import { jsonError, jsonState } from '$lib/server/http';
-import { getLabctlManager } from '$lib/server/labctl-manager';
+import { jsonError, jsonState } from '$lib/server/http.js';
+import { getLabctlManager } from '$lib/server/labctl-manager.js';
 
 import type { RequestHandler } from './$types';
 
