@@ -2,6 +2,7 @@ import math
 import enum
 from typing import Unpack
 import warnings
+from pathlib import Path
 
 from typing_extensions import cast, NotRequired
 import numpy as np
@@ -225,6 +226,9 @@ class CameraExperiment(BaseExperiment):
     def make_labctl_script(self) -> Script:
         super().make_labctl_script()  # This will check the config and prepare the experiment
         cmds = self.make_labctl_header()
+        # for device in cmds.devices:
+        #     device.verify_device()
+
         self.pdg = cast(BncPdgCmds, list(cmds.devices.keys())[0])
 
         ###################
@@ -388,8 +392,10 @@ class CameraExperiment(BaseExperiment):
         import pickle as pkl
         from toddler.data.spectrum import Spectrum
 
+        f_data = Path(f_data)
+
         if f_pickle is None:
-            f_pickle = f_data.with_stem(f_data.stem + "_idx").with_suffix(".pkl")
+            f_pickle = f_data.with_suffix(".pkl")
 
         # Load pickle file
         if info is None:
@@ -401,6 +407,7 @@ class CameraExperiment(BaseExperiment):
             bg_key = f"{config}_bg"
 
             if not sig_key in info:
+                print(f"Warning: No indices found for config {config}, skipping.")
                 return None, None
 
             # Get the indices for the signal and background
@@ -408,24 +415,28 @@ class CameraExperiment(BaseExperiment):
             bg_ind = info[bg_key]
 
             # Get the data for the signal and background
-            sig_data = data[:, :, sig_ind[0]]
-            bg_data = data[:, :, bg_ind[0]]
+            sig_data = data[:, :, sig_ind]
+            bg_data = data[:, :, bg_ind]
 
             sig_data_avg = sig_data.c.median(axis=2)
             bg_data_avg = bg_data.c.median(axis=2)
+            sig_data_processed = (
+                sig_data_avg if len(bg_ind) == 0 else sig_data_avg - bg_data_avg
+            )
 
-            return sig_data, bg_data, sig_data_avg - bg_data_avg
+            return sig_data, bg_data, sig_data_processed
 
         # Load sif file
         data = Spectrum.from_file(f_data, new_axes=True)
         data._axis_lambda = 0
+        print(data.shape)
 
         # Postprocess all configs
         results = {}
         for i, config in enumerate(info["configs"]):
-            results[config] = get_data(data, info, i)
+            results[config] = get_data(data, info, config)
 
-        return results
+        return results, info
 
     def make_postprocessing_script(self):
         # TODO: Currently, this will not work! Maybe remove and bundle in package
