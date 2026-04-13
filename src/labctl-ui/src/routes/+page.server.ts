@@ -1,4 +1,4 @@
-import { getLabctlManager } from '$lib/server/labctl-manager.js';
+import { getLabctlManager } from '$lib/server/labctl-manager';
 
 import type { PageServerLoad } from './$types';
 

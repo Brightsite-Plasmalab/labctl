@@ -6,9 +6,9 @@
     Alert,
     AlertDescription,
     AlertTitle,
-  } from "$lib/components/ui/alert/index.js";
-  import { Badge } from "$lib/components/ui/badge/index.js";
-  import { Button } from "$lib/components/ui/button/index.js";
+  } from "$lib/components/ui/alert";
+  import { Badge } from "$lib/components/ui/badge";
+  import { Button } from "$lib/components/ui/button";
   import {
     Card,
     CardContent,
@@ -16,10 +16,10 @@
     CardFooter,
     CardHeader,
     CardTitle,
-  } from "$lib/components/ui/card/index.js";
-  import { Input } from "$lib/components/ui/input/index.js";
-  import { Separator } from "$lib/components/ui/separator/index.js";
-  import type { LabctlState, LogEntry } from "$lib/types.js";
+  } from "$lib/components/ui/card";
+  import { Input } from "$lib/components/ui/input";
+  import { Separator } from "$lib/components/ui/separator";
+  import type { LabctlState, LogEntry } from "$lib/types";
 
   import type { PageData } from "./$types";
 
