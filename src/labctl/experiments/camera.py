@@ -388,7 +388,7 @@ class CameraExperiment(BaseExperiment):
     @staticmethod
     def postprocess(
         f_data, f_pickle=None, info=None
-    ) -> dict[str, tuple[np.ndarray, np.ndarray, np.ndarray]]:
+    ) -> tuple[dict[str, tuple[np.ndarray, np.ndarray, np.ndarray]], dict]:
         import pickle as pkl
         from toddler.data.spectrum import Spectrum
 

@@ -1,15 +1,31 @@
-from typing_extensions import List
-from labctl.experiments.polarisation import PolarisationFilterExperiment
-from labctl.experiments.translation_stage import TranslationStageExperiment
+from typing_extensions import Unpack, List
+from labctl.experiments.polarisation import (
+    PolarisationFilterExperiment,
+    PolarisationFilterExperimentKwargs,
+)
+from labctl.experiments.translation_stage import (
+    TranslationStageExperiment,
+    TranslationStageExperimentKwargs,
+)
+
+
+class PolarisedTranslationStageExperimentKwargs(
+    TranslationStageExperimentKwargs, PolarisationFilterExperimentKwargs
+):
+    pass
 
 
 class PolarisedTranslationStageExperiment(
-    PolarisationFilterExperiment, TranslationStageExperiment
+    TranslationStageExperiment,
+    PolarisationFilterExperiment,
 ):
     """
     This experiment combines the capabilities of the PolarisationFilterExperiment and the TranslationStageExperiment.
     It will run through all combinations of the translation stage positions and polarisation filter angles.
     """
+
+    def __init__(self, **kwargs: Unpack[PolarisedTranslationStageExperimentKwargs]):
+        super().__init__(**kwargs)
 
     def get_config_names(self) -> List[str]:
         config_names_translation = TranslationStageExperiment.get_config_names(self)
