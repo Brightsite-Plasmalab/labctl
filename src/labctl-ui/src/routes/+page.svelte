@@ -54,31 +54,29 @@
   };
 
   let { data }: { data: PageData } = $props();
-  const initialState = data.initialState;
+  const getInitialState = () => data.initialState;
+  const createInitialChannelForms = () =>
+    getInitialState().channels.map((channel) => ({
+      baudRate: String(channel.baudRate),
+      portPath: channel.portPath ?? "",
+    }));
 
   let electronApp: Window["electronApp"] | undefined = $state(undefined);
   let pendingAction: string | null = $state(null);
   let requestError: string | null = $state(null);
   let scriptFileInput: HTMLInputElement | null = $state(null);
-  let scriptPath: string = $state(initialState.script.filePath ?? "");
+  let scriptPath: string = $state(getInitialState().script.filePath ?? "");
   let uploadedScriptPath: string | null = $state(null);
-  let dashboard: LabctlState = $state(initialState);
-  let commandDrafts: string[] = $state(initialState.channels.map(() => ""));
-  let channelForms: ChannelForm[] = $state(
-    initialState.channels.map((channel) => ({
-      baudRate: String(channel.baudRate),
-      portPath: channel.portPath ?? "",
-    })),
-  );
+  let dashboard: LabctlState = $state(getInitialState());
+  let commandDrafts: string[] = $state(getInitialState().channels.map(() => ""));
+  let channelForms: ChannelForm[] = $state(createInitialChannelForms());
 
   function applyState(nextState: LabctlState) {
     dashboard = nextState;
     channelForms = nextState.channels.map((channel, index) => ({
-      baudRate: String(
-        channel.baudRate ||
-          Number.parseInt(channelForms[index]?.baudRate ?? "", 10) ||
-          9600,
-      ),
+      baudRate: channel.isConnected
+        ? String(channel.baudRate)
+        : channelForms[index]?.baudRate || String(channel.baudRate || 9600),
       portPath: channel.isConnected
         ? (channel.portPath ?? "")
         : channelForms[index]?.portPath ||
@@ -155,6 +153,7 @@
   async function refreshState() {
     try {
       const payload = await fetchJson<{ state: LabctlState }>("/api/state");
+      requestError = null;
       applyState(payload.state);
     } catch (error) {
       requestError =
@@ -173,8 +172,10 @@
     try {
       const payload = await fetchJson<{ state: LabctlState }>(input, init);
       applyState(payload.state);
+      return true;
     } catch (error) {
       requestError = error instanceof Error ? error.message : "Action failed.";
+      return false;
     } finally {
       pendingAction = null;
     }
@@ -213,7 +214,7 @@
       return;
     }
 
-    await runAction(`send-${index}`, `/api/channels/${index}`, {
+    const didSend = await runAction(`send-${index}`, `/api/channels/${index}`, {
       body: JSON.stringify({
         action: "send",
         command,
@@ -221,7 +222,9 @@
       method: "POST",
     });
 
-    commandDrafts[index] = "";
+    if (didSend) {
+      commandDrafts[index] = "";
+    }
   }
 
   async function browseScript() {
@@ -468,7 +471,7 @@
                 <label class="text-sm font-medium" for={`port-${index}`}
                   >Port</label
                 >
-                <label class="text-sm font-medium" for={`port-${index}`}
+                <label class="text-sm font-medium" for={`baud-${index}`}
                   >Baud rate</label
                 >
               </div>
