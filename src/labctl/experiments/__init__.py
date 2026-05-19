@@ -15,3 +15,4 @@ from labctl.experiments.base import BaseExperiment
 from labctl.experiments.simple import SimpleCameraExperiment
 
 from labctl.experiments.camera_timesweep import CameraTimesweepExperiment
+from labctl.experiments.thorlabs_camera_timesweep import ThorlabsCameraTimesweepExperiment
