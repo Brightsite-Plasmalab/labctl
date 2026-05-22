@@ -429,7 +429,6 @@ class CameraExperiment(BaseExperiment):
         # Load sif file
         data = Spectrum.from_file(f_data, new_axes=True)
         data._axis_lambda = 0
-        print(data.shape)
 
         # Postprocess all configs
         results = {}

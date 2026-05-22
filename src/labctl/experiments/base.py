@@ -55,18 +55,24 @@ class BaseExperiment(ABC):
     def make_postprocessing_script(self) -> str:
         pass
 
-    def save_labctl_script(self, dest=None):
+    def save_labctl_script(self, dest=None, overwrite=False):
         if dest is None:
             dest = self.dest_folder / (self.file_name + ".labctl")
+
+        if not overwrite and pathlib.Path(dest).exists():
+            raise FileExistsError(f"File already exists: {dest}")
 
         cmds = self.make_labctl_script()
         cmds.write(dest)
 
         return dest
 
-    def save_postprocessing_script(self, dest=None):
+    def save_postprocessing_script(self, dest=None, overwrite=False):
         if dest is None:
             dest = self.dest_folder / (self.file_name + "_process.py")
+
+        if not overwrite and pathlib.Path(dest).exists():
+            raise FileExistsError(f"File already exists: {dest}")
 
         script = self.make_postprocessing_script()
         with open(dest, "w") as f:
@@ -74,9 +80,13 @@ class BaseExperiment(ABC):
 
         return dest
 
-    def save_postprocessing_info(self, dest_info=None):
+    def save_postprocessing_info(self, dest_info=None, overwrite=False):
         if dest_info is None:
             dest_info = self.dest_folder / (self.file_name + ".pkl")
+
+        if not overwrite and pathlib.Path(dest_info).exists():
+            raise FileExistsError(f"File already exists: {dest_info}")
+
         info_obj = self.make_postprocessing_info()
 
         with open(dest_info, "wb") as f:
@@ -84,7 +94,7 @@ class BaseExperiment(ABC):
 
         return dest_info
 
-    def save_all(self):
-        self.save_labctl_script()
-        self.save_postprocessing_info()
-        self.save_postprocessing_script()
+    def save_all(self, overwrite=False):
+        self.save_labctl_script(overwrite=overwrite)
+        self.save_postprocessing_info(overwrite=overwrite)
+        self.save_postprocessing_script(overwrite=overwrite)
