@@ -53,7 +53,7 @@ class FilteredTranslationStageExperiment(
         config_order_translation, config_order_filters = self.get_config_order()
         return [
             f"{config_names_translation[config_order_translation[i]]}_{config_names_filters[config_order_filters[i]]}"
-            for i in range(len(config_names_translation))
+            for i in range(len(config_order_translation))
         ]
 
     def check_N_frames(self, expected_length, config_explanation):
