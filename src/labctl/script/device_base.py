@@ -35,6 +35,13 @@ class DeviceBase:
         self.parent.append(commands, device=self)
 
     def __str__(self) -> str:
+        """Return the device class name for logging and comments.
+
+        Returns
+        -------
+        str
+            Device class name.
+        """
         return f"{self.__class__.__name__}"
 
     def preferred_baud_rate(self) -> int:

@@ -39,6 +39,26 @@ class PulsedMicrowaveTimesweep(CameraExperiment):
         channel_MW_trigger: str,
         **kwargs: Unpack[CameraExperimentKwargs],
     ) -> None:
+        """Initialize a pulsed microwave delay sweep.
+
+        Parameters
+        ----------
+        t0 : float
+            Base synchronization delay in seconds.
+        delta_t : list[float]
+            Relative microwave delay offsets to sweep.
+        MW_pulse_frequency : int
+            Microwave pulse frequency in Hz.
+        channel_MW_trigger : str
+            PDG channel used to trigger microwaves.
+        **kwargs : Unpack[CameraExperimentKwargs]
+            Base camera experiment settings.
+
+        Raises
+        ------
+        ValueError
+            If the microwave channel or frequency relationship is invalid.
+        """
         self.t0 = t0
         self.delta_t = delta_t
         self.channel_MW_trigger = channel_MW_trigger  # Should be in [A, B, ..., H]
@@ -136,11 +156,9 @@ class PulsedMicrowaveTimesweep(CameraExperiment):
         cmds.pause(1000)
 
     def get_camera_delay_foreground(self, config: int) -> float:
-        """Return foreground camera delay for configuration ``config``."""
         return self.camera_delay_optimum
 
     def get_camera_delay_background(self, config: int) -> float:
-        """Return background camera delay offset by one microwave period."""
         # Take the background one microwave pulse after the laser pulse
         return self.camera_delay_optimum + 1 / self.MW_pulse_frequency
 

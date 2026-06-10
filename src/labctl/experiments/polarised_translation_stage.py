@@ -13,6 +13,13 @@ class PolarisedTranslationStageExperiment(
     """
 
     def get_config_names(self) -> list[str]:
+        """Return combined translation/polarization configuration names.
+
+        Returns
+        -------
+        list[str]
+            Names formatted as ``<translation>_<polarization>``.
+        """
         config_names_translation = TranslationStageExperiment.get_config_names(self)
         config_names_polarisation = PolarisationFilterExperiment.get_config_names(self)
         return [

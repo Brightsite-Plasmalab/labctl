@@ -15,6 +15,7 @@ class ScriptBase:
     lines: list[str]
 
     def __init__(self) -> None:
+        """Initialize an empty script line buffer."""
         self.lines = []
 
     def append(self, commands: Union[str, Collection[str]]) -> None:
@@ -51,7 +52,11 @@ class ScriptBase:
                 f.writelines(self.lines)
 
     def copy(self) -> Self:
-        """
-        Creates a deep copy of the current ScriptBase instance.
+        """Create a deep copy of the script.
+
+        Returns
+        -------
+        Self
+            Deep-copied script instance.
         """
         return deepcopy(self)

@@ -5,7 +5,6 @@ delay offsets and stores timing metadata for postprocessing.
 """
 
 from typing_extensions import override, Unpack
-
 import numpy as np
 
 from labctl.experiments.camera import CameraExperiment, CameraExperimentKwargs
@@ -13,7 +12,6 @@ from labctl.experiments.camera import CameraExperiment, CameraExperimentKwargs
 
 class CameraTimesweepExperimentKwargs(CameraExperimentKwargs):
     """Keyword arguments for :class:`CameraTimesweepExperiment`."""
-
     delta_t: list[float] | np.ndarray
 
 

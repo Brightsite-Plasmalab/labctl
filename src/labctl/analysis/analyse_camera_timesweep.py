@@ -1,5 +1,4 @@
 """Convenience plotting helper for camera-delay timesweep experiments."""
-
 import pickle
 
 import numpy as np
@@ -25,14 +24,15 @@ def analyse_camera_timesweep(
         Optional width slice applied during loading.
     """
     # Load pickle file
-    info = pickle.load(open(pickle_loc, "rb"))
+    with open(pickle_loc, "rb") as pkl_file:
+        info = pickle.load(pkl_file)
 
     if info['experiment_type'] != 'CameraTimesweepExperiment':
         msg = f"Function only works for 'CameraTimesweepExperiment' not {info['experiment_type']}."
         raise ValueError(msg)
 
     data = get_data(sif_loc, pickle_loc, width_indexes=indexes)[0]
-    data_mean = np.mean(data, axis = (1, 2))
+    data_mean = np.mean(data, axis = (-2, -1))
     data_flat = data_mean.flatten()
     time_values = info["t"]
     repeated_time_values = np.repeat(time_values, info["n_frames"][0])

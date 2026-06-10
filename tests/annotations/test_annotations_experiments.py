@@ -8,14 +8,13 @@ from labctl.experiments.base import BaseExperiment, BaseExperimentKwargs
 from labctl.experiments.camera import CameraExperiment, CameraExperimentKwargs
 from labctl.experiments.camera_timesweep import CameraTimesweepExperiment, CameraTimesweepExperimentKwargs
 from labctl.experiments.polarisation_sweep import (PolarisationFilterSweepExperiment,
-                                                   PolarisationFilterSweepExperimentKwargs)
+                                                         PolarisationFilterSweepExperimentKwargs)
 from labctl.experiments.polarisation import PolarisationFilterExperiment, PolarisationFilterExperimentKwargs
 from labctl.experiments.translation_stage import TranslationStageExperiment, TranslationStageExperimentKwargs
 from labctl.experiments.raman_2d import Raman2DExperiment, Raman2DExperimentKwargs
 from labctl.experiments.pulsed_microwave import PulsedMicrowaveTimesweep, PulsedMicrowaveTimesweepKwargs
 from labctl.experiments.experiment_polarised_translation_stage import (PolarisedTranslationStageExperiment,
-                                                                       PolarisedTranslationStageExperimentKwargs)
-
+                                                                             PolarisedTranslationStageExperimentKwargs)
 
 
 def check_not_required(tp):
@@ -26,6 +25,7 @@ def check_not_required(tp):
     origin = typing.get_origin(tp)
     return origin is typing_extensions.NotRequired
 
+
 def unwrap_not_required(tp):
     """
     If `tp` is `NotRequired[T]` (typing or typing_extensions), return `T`,
@@ -35,6 +35,47 @@ def unwrap_not_required(tp):
         args = typing.get_args(tp)
         return args[0]
     return tp
+
+
+def _is_optional_of(tp, expected_inner) -> bool:
+    """Return True if ``tp`` is ``expected_inner | None`` / ``Optional[expected_inner]``."""
+    args = typing.get_args(tp)
+    if not args:
+        return False
+    non_none_args = tuple(arg for arg in args if arg is not type(None))
+    has_none = len(non_none_args) != len(args)
+    return has_none and len(non_none_args) == 1 and non_none_args[0] == expected_inner
+
+
+def _annotations_compatible(param_annotation, typed_dict_annotation) -> bool:
+    """Return whether constructor and TypedDict annotations are compatible.
+
+    For ``NotRequired[T]`` fields, constructor annotations may be either ``T``
+    or ``T | None`` / ``Optional[T]``.
+    """
+    unwrapped = unwrap_not_required(typed_dict_annotation)
+    if param_annotation == unwrapped:
+        return True
+    if check_not_required(typed_dict_annotation):
+        return _is_optional_of(param_annotation, unwrapped)
+    return False
+
+
+def _parameter_matches_typed_dict(
+    parameter: inspect.Parameter,
+    typed_dict_annotation,
+) -> bool:
+    """Return whether a constructor parameter is compatible with a TypedDict field.
+
+    Besides exact matches, this accepts ``T | None`` when the constructor
+    default is ``None`` because the codebase uses that pattern for values that
+    are validated explicitly at runtime.
+    """
+    if _annotations_compatible(parameter.annotation, typed_dict_annotation):
+        return True
+    return parameter.default is None and _is_optional_of(
+        parameter.annotation, unwrap_not_required(typed_dict_annotation)
+    )
 
 def _is_unpack(tp):
     """Return True if tp is Unpack[...] (typing or typing_extensions)."""
@@ -129,7 +170,7 @@ def test_typed_dict_init_same(test_class, test_typed_dict):
         if key in kwargs:
             continue
         assert key in test_class_params, f"Parameter {key} is missing in {test_class.__name__}.__init__"
-        assert test_class_params[key] == typed_dict_params_unwrapped[key], \
+        assert _parameter_matches_typed_dict(sig[key], typed_dict_params[key]), \
             (f"Parameter {key} has type {test_class_params[key]} in {test_class.__name__}.__init__, "
              f"but {typed_dict_params_unwrapped[key]} in {test_typed_dict.__name__}")
 

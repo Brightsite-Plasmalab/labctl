@@ -3,15 +3,16 @@
 import os
 import pathlib
 import pickle as pkl
+from collections.abc import Sequence
 from typing import TypedDict
 from abc import ABC, abstractmethod
 
-from typing_extensions import NotRequired, List
+from typing_extensions import NotRequired
+import numpy as np
 
 
 class BaseExperimentKwargs(TypedDict):
     """Shared keyword arguments accepted by experiment constructors."""
-
     dest_folder: os.PathLike | str
     file_name: str
     author: NotRequired[str]
@@ -48,6 +49,13 @@ class BaseExperiment(ABC):
 
     @abstractmethod
     def make_labctl_script(self):
+        """Build the lab control script for the experiment.
+
+        Returns
+        -------
+        Script
+            Concrete script object containing all commands.
+        """
         pass
 
     @abstractmethod
@@ -75,10 +83,28 @@ class BaseExperiment(ABC):
             "experiment_type": type(self).__name__,
             "version": "0.0.2",
         }
+        # def to_list(value):
+        #     if isinstance(value, np.ndarray):
+        #         return value.tolist()
+        #     elif isinstance(value, Sequence) and not isinstance(value, str):
+        #         return to_list(value)
+        #     return value
+        #
+        # for key, value in info_obj.items():
+        #     info_obj[key] = to_list(info_obj[key])
+
+
         return info_obj
 
     @abstractmethod
     def make_postprocessing_script(self) -> str:
+        """Build a helper postprocessing script.
+
+        Returns
+        -------
+        str
+            Python source code for postprocessing.
+        """
         pass
 
     def save_labctl_script(self, dest: os.PathLike | str | None = None):
@@ -128,7 +154,7 @@ class BaseExperiment(ABC):
     def save_postprocessing_info(
         self,
         dest_info: os.PathLike | str | None = None,
-    ):
+    ) -> pathlib.Path | os.PathLike | str:
         """Persist postprocessing metadata as a pickle file.
 
         Parameters

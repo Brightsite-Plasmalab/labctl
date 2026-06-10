@@ -121,12 +121,12 @@ class BackgroundConfiguration(enum.IntEnum):
 
 class CameraExperimentKwargs(BaseExperimentKwargs):
     """Keyword arguments accepted by :class:`CameraExperiment`."""
-
     n_frames: list[int] | int
     t_exposure: float
     camera_delay_optimum: float
 
     n_iter: NotRequired[int]
+    camera_pulse_width: NotRequired[float]
     laser_frequency: NotRequired[int]
     camera_delay_background: NotRequired[float]
     camera_channel: NotRequired[str]  # Channel for the camera trigger
@@ -180,6 +180,7 @@ class CameraExperiment(BaseExperiment):
         t_exposure: float,
         camera_delay_optimum: float,
         *,
+        camera_pulse_width: float = 1e-5,
         camera_delay_background: float = 0,
         n_iter: int = 1,
         laser_frequency: int = 30,
@@ -212,6 +213,7 @@ class CameraExperiment(BaseExperiment):
             Background acquisition schedule.
         camera_reset_time : float, optional
             Wait time after each frame in seconds.
+        camera_pulse_width: float, optional
         **kwargs : Unpack[BaseExperimentKwargs]
             Base experiment metadata.
         """
@@ -230,6 +232,7 @@ class CameraExperiment(BaseExperiment):
         self.camera_channel = camera_channel
         self.background_every = BackgroundConfiguration(background_every)
         self.camera_reset_time = camera_reset_time
+        self.camera_pulse_width = camera_pulse_width
 
         if type(self) is CameraExperiment:
             self.check_N_frames(1, "")
@@ -276,9 +279,33 @@ class CameraExperiment(BaseExperiment):
             raise ValueError(msg)
 
     def get_camera_delay_foreground(self, config: int) -> float:
+        """Return foreground camera delay for a configuration.
+
+        Parameters
+        ----------
+        config : int
+            Configuration index.
+
+        Returns
+        -------
+        float
+            Foreground camera delay in seconds.
+        """
         return self.camera_delay_optimum
 
     def get_camera_delay_background(self, config: int) -> float:
+        """Return background camera delay for a configuration.
+
+        Parameters
+        ----------
+        config : int
+            Configuration index.
+
+        Returns
+        -------
+        float
+            Background camera delay in seconds.
+        """
         return self.camera_delay_background
 
     def perform_measurement(
@@ -294,8 +321,9 @@ class CameraExperiment(BaseExperiment):
         cmds.append(f"# Acquiring: config {config+1:d}/{len(self.n_frames):d}, {version} ({frame + 1:d}/{num_meas:d}), "
                     f"iteration {iteration + 1:d}/{self.n_iter:d}")
         # Get the camera delay for this version (foreground/background)
-        cameradelay = self.get_camera_delay(config, version)
-        self.pdg.delay(self.camera_channel, cameradelay)
+        camera_delay = self.get_camera_delay(config, version)
+        self.pdg.delay(self.camera_channel, camera_delay)
+        self.pdg.pulsewidth(self.camera_channel, self.camera_pulse_width)
 
         # Trigger the camera
         self.pdg.arm()
@@ -331,7 +359,7 @@ class CameraExperiment(BaseExperiment):
 
         # Acquisition parameters
         T_pulse = 1 / self.laser_frequency  # Pulse period
-        N_accumulate = math.floor(1 / T_pulse * self.t_exposure) + 1
+        N_accumulate = math.floor(self.laser_frequency * self.t_exposure) + 1
         self.t_exposure = (N_accumulate - 0.5) * T_pulse
         print(f"Pulses per frame: {N_accumulate:.0f}")
 
@@ -362,7 +390,7 @@ class CameraExperiment(BaseExperiment):
         # Setting for camera channel
         self.pdg.channel_gate(self.camera_channel, "LOW")
         self.pdg.channel_mode(self.camera_channel, "BURS")
-        self.pdg.enable(self.camera_channel, True)
+        # self.pdg.enable(self.camera_channel, True)  do not enable channel, this will start the pulsing
 
         # For every iteration of measurements ...
         for i in range(self.n_iter):
@@ -409,10 +437,13 @@ class CameraExperiment(BaseExperiment):
         return cmds
 
     def get_config_indices_full(self) -> list[list[tuple[np.ndarray, np.ndarray]]]:
-        """
-        Returns a list that maps the configurations to the indices of the foreground and background frames in the acquired data.
-        It keeps the indices from different iterations seperate.
-        [ (fg_idx_config1, bg_idx_config1), (fg_idx_config2, bg_idx_config2), ... ],
+        """Return per-iteration foreground/background indices for each config.
+
+        Returns
+        -------
+        list[list[tuple[np.ndarray, np.ndarray]]]
+            Nested list indexed as ``[iteration][config]`` with foreground and
+            background index arrays.
         """
         idx = [[] for _ in range(self.n_iter)]
 
@@ -430,10 +461,13 @@ class CameraExperiment(BaseExperiment):
         return idx
 
     def get_config_indices(self) -> list[list[np.ndarray]]:
-        """
-        Returns a list that maps the configurations to the indices of the foreground and background frames in the acquired data.
-        It groups together the indices from different iterations.
-        [ (fg_idx_config1, bg_idx_config1), (fg_idx_config2, bg_idx_config2), ... ],
+        """Return grouped foreground/background indices for each config.
+
+        Returns
+        -------
+        list[list[np.ndarray]]
+            Per-config foreground/background arrays with all iterations
+            concatenated.
         """
         full_indices = self.get_config_indices_full()
         idx = [[] for _ in range(len(self.n_frames))]
@@ -444,9 +478,12 @@ class CameraExperiment(BaseExperiment):
         return idx
 
     def get_config_index_dict(self) -> dict[str, dict[str, np.ndarray]]:
-        """
-        Returns a dictionary that maps the config names to the indices of the foreground and background frames in the acquired data.
-        { config_name: (fg_idx_config_iter1, bg_idx_config_iter1), ... },
+        """Return grouped indices keyed by human-readable config name.
+
+        Returns
+        -------
+        dict[str, dict[str, np.ndarray]]
+            Mapping of config names to ``foreground`` and ``background`` arrays.
         """
         idx = self.get_config_indices()
         config_names = self.get_config_names()
@@ -498,6 +535,23 @@ class CameraExperiment(BaseExperiment):
         f_pickle=None,
         info=None,
     ) -> dict[str, tuple[np.ndarray, np.ndarray, np.ndarray]]:
+        """Load and postprocess corrected spectra for each configuration.
+
+        Parameters
+        ----------
+        f_data : path-like
+            Path to the acquired data file.
+        f_pickle : path-like, optional
+            Path to the metadata pickle. If omitted, derived from ``f_data``.
+        info : dict, optional
+            Preloaded metadata dictionary.
+
+        Returns
+        -------
+        dict[str, tuple[np.ndarray, np.ndarray, np.ndarray]]
+            Mapping from config name to raw signal, raw background, and
+            corrected signal.
+        """
         import pickle as pkl
         from toddler.data.spectrum import Spectrum
 
@@ -548,6 +602,13 @@ class CameraExperiment(BaseExperiment):
         return results, info
 
     def make_postprocessing_script(self) -> str:
+        """Return a legacy postprocessing script template.
+
+        Returns
+        -------
+        str
+            Python source code template for manual postprocessing.
+        """
         # TODO: Currently, this will not work! Maybe remove and bundle in package
         code = """
 # IMPORTANT: THIS IS NOT CORRECT CODE FOR CURRENT VERSION!!
