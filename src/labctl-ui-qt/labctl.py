@@ -3,6 +3,7 @@
 import sys
 import time
 import threading
+import queue
 from typing import Optional
 
 import serial
@@ -18,26 +19,44 @@ except ImportError:
 
 import labctl_ui
 
+SERIAL_NEWLINE_CHARS = "\n"
+
+# Colors (Hexadecimal strings)
+COLORS_DEVICES = ["cccc00", "0000ff", "00cccc"]  # Yellow, Blue, Cyan
+COLOR_META = "ff00ff"  # Magenta
+COLOR_TEST_SUCCESS = "00ff00"  # Green
+COLOR_TEST_FAILURE = "ff0000"  # Red
+COLOR_LOG = "000000"  # Black
+
 
 class SerialHandler(QObject):
     """Manages a single serial connection and its retrieval thread."""
 
-    data_received = pyqtSignal(str, str)  # message, color
+    data_received = pyqtSignal(str)  # message
+    newline_chars: bytes = SERIAL_NEWLINE_CHARS
+    default_color: str = "000000"
 
-    def __init__(self, index: int, color: str):
+    def __init__(
+        self, index: int, color: str, newline_chars: bytes = SERIAL_NEWLINE_CHARS
+    ):
         super().__init__()
         self.index = index
         self.default_color = color
         self.conn: Optional[serial.Serial] = None
         self.thread: Optional[threading.Thread] = None
         self.listening = False
+        self.newline_chars = newline_chars
         self.stop_event = threading.Event()
+        self._rx_queue: queue.Queue[str] = queue.Queue()
 
     def connect(self, port: str, baudrate: int):
         self.disconnect()
         self.conn = serial.Serial(port, baudrate=baudrate, timeout=0.1)
         self.listening = True
         self.stop_event.clear()
+        # Clear any stale data from a previous connection
+        with self._rx_queue.mutex:
+            self._rx_queue.queue.clear()
         self.thread = threading.Thread(target=self._retrieve_data_loop, daemon=True)
         self.thread.start()
 
@@ -51,43 +70,40 @@ class SerialHandler(QObject):
         self.conn = None
         self.thread = None
 
-    def write(self, message: str):
+    def send(self, message: str):
         if self.conn and self.conn.is_open:
-            self.conn.write(message.encode("ascii"))
+            self.conn.write(f"{message}{self.newline_chars}".encode("ascii"))
 
-    def get_response(self, timeout: float = 1.0) -> Optional[str]:
-        """Wait for a response from the serial connection within a given timeout."""
+    def query(self, command: str, timeout: float = 1.0) -> Optional[str]:
+        """Send a command and wait for the response within a given timeout.
+
+        Reads from the shared receive queue so it is safe to call while
+        _retrieve_data_loop is running in its background thread.
+        """
         if not self.conn or not self.conn.is_open:
             return None
 
-        start_time = time.time()
-        while time.time() - start_time < timeout:
-            if self.conn.in_waiting:
-                try:
-                    response = self.conn.readline().decode().strip()
-                    if response:
-                        return response
-                except Exception as e:
-                    print(f"Error reading response: {e}")
-                    return None
-            time.sleep(0.01)
-        return None
+        # Discard any stale messages that arrived before this command was sent.
+        with self._rx_queue.mutex:
+            self._rx_queue.queue.clear()
+
+        self.send(command)
+        try:
+            return self._rx_queue.get(timeout=timeout)
+        except queue.Empty:
+            return None
 
     def _retrieve_data_loop(self):
         while self.listening and not self.stop_event.is_set():
             if self.conn and self.conn.is_open:
                 try:
                     message = self.conn.readline()
-                    if message and message not in (b"", b"\n", b"\r\n"):
-                        clean_msg = message.decode().strip("\r\n")
-                        self.data_received.emit(
-                            clean_msg,
-                            (
-                                "00ff00"
-                                if self.index == 0
-                                else ("00cccc" if self.index == 1 else "0000ff")
-                            ),
-                        )
+                    if message and message.decode().strip():
+                        clean_msg = message.decode().strip()
+                        # Put into queue first so query() can consume it,
+                        # then also emit for live UI display.
+                        self._rx_queue.put(clean_msg)
+                        self.data_received.emit(clean_msg)
                 except Exception as e:
                     print(f"Error reading from serial {self.index}: {e}")
                     break
@@ -144,10 +160,10 @@ class ScriptExecutor(QObject):
 
             # Handle comments and meta-commands
             command = raw_command
-            if "#" in raw_command:
+            if raw_command:
                 cmd_part, _, comment = raw_command.partition("#")
                 if comment.strip():
-                    self._log(comment.strip(), "000000")
+                    self._log(comment.strip(), COLOR_LOG)
                 if raw_command.strip().startswith("#"):
                     # Only a comment or a Meta Command
                     if self._handle_meta_command(raw_command):
@@ -160,14 +176,13 @@ class ScriptExecutor(QObject):
 
             # Execute serial command
             handler = self.serial_handlers[self.current_selser]
-            msg = f"{command}\r\n"
-            handler.write(msg)
-            self._log(msg.strip(), handler.default_color)
+            handler.send(command)
+            self._log(command.strip(), handler.default_color)
 
             time.sleep(self.delay_submission)
 
         self.is_running = False
-        self._log("LOG: Script execution finished.", "000000")
+        self._log("LOG: Script execution finished.", COLOR_LOG)
         self.script_finished.emit()
 
         # Save log file at the end
@@ -181,7 +196,7 @@ class ScriptExecutor(QObject):
         if cmd.startswith("#WAIT"):
             try:
                 ms = int(cmd[5:].strip())
-                self._log(f"Waiting for {ms} ms", "ff00ff")
+                self._log(f"Waiting for {ms} ms", COLOR_META)
                 time.sleep(ms / 1000.0)
                 return True
             except ValueError:
@@ -191,23 +206,29 @@ class ScriptExecutor(QObject):
                 idx = int(cmd[7:].strip())
                 if 0 <= idx < len(self.serial_handlers):
                     self.current_selser = idx
-                    self._log(f"Selected serial port {idx}", "ff00ff")
+                    self._log(f"Selected serial port {idx}", COLOR_META)
                 else:
                     self.status_message.emit(f"Invalid serial port index: {idx}", True)
                 return True
             except ValueError:
                 pass
         elif cmd.strip() == "#BEEP":
-            self._log("Beep!", "ff00ff")
+            self._log("Beep!", COLOR_META)
             try:
                 winsound.MessageBeep()
             except:
                 pass
             return True
-        elif cmd.startswith("#RESULT "):
+        elif cmd.startswith("#TEST"):
             try:
-                # Format: #RESULT command == expected_result # comment
-                body = cmd[8:]
+                # Format: #TEST command == expected_result # comment
+                # or:     #TESTn command == expected_result # comment
+                # where n limits comparison to the first n characters of the response
+                prefix = cmd.split()[0]  # e.g. "#TEST" or "#TEST3"
+                char_limit_str = prefix[5:]  # everything after "#TEST"
+                char_limit = int(char_limit_str) if char_limit_str else None
+
+                body = cmd[len(prefix) :].strip()
                 comment = ""
                 # Extract trailing comment after the result part
                 # Split on == first, then check for # in the expected part
@@ -224,35 +245,36 @@ class ScriptExecutor(QObject):
 
                     handler = self.serial_handlers[self.current_selser]
 
-                    # Send command
-                    handler.write(f"{command}\r\n")
-                    self._log(f"Checking: {command}", "ff00ff")
-
-                    # Wait for response via handler method (up to 1 second)
-                    response = handler.get_response(timeout=1.0)
+                    self._log(f"Checking: {command}", handler.default_color)
+                    response = handler.query(command, timeout=1.0)
 
                     label = f" ({comment})" if comment else ""
                     if response is not None:
-                        if response == expected:
+                        compared = response[:char_limit] if char_limit else response
+                        if compared == expected:
                             self._log(
-                                f"Success{label}: {response} == {expected}", "00ff00"
+                                f"Success{label}: {compared} == {expected}",
+                                COLOR_TEST_SUCCESS,
                             )
                         else:
                             self._log(
-                                f"Failure{label}: {response} != {expected}", "ff0000"
+                                f"Failure{label}: {compared} != {expected}",
+                                COLOR_TEST_FAILURE,
                             )
                             self.status_message.emit(
-                                f"Verification failed{label}: {response} != {expected}",
+                                f"Verification failed{label}: {compared} != {expected}",
                                 True,
                             )
                     else:
-                        self._log(f"Failure{label}: No response received", "ff0000")
+                        self._log(
+                            f"Failure{label}: No response received", COLOR_TEST_FAILURE
+                        )
                         self.status_message.emit(
                             f"Verification failed{label}: No response", True
                         )
                     return True
             except Exception as e:
-                self._log(f"Error in #RESULT: {e}", "ff0000")
+                self._log(f"Error in #RESULT: {e}", COLOR_TEST_FAILURE)
         return False
 
     def _log(self, message: str, color: str):
@@ -280,8 +302,6 @@ class ExampleApp(QtWidgets.QMainWindow, labctl_ui.Ui_MainWindow):
         self.actionExit.triggered.connect(self.close)
         self.actionAbout.triggered.connect(self.about)
 
-        self.add_ports()
-
         self.execLabctlScript_btn.clicked.connect(self.execLabctlScript)
         self.cmdPath_lE.returnPressed.connect(self.execLabctlScript)
 
@@ -290,22 +310,28 @@ class ExampleApp(QtWidgets.QMainWindow, labctl_ui.Ui_MainWindow):
         self.send_btns = [self.send_btn_0, self.send_btn_1, self.send_btn_2]
         self.cmd_widgets = [self.cmd_0, self.cmd_1, self.cmd_2]
         self.port_widgets = [self.port_cB, self.port_cB_1, self.port_cB_2]
+        self.baud_widgets = [self.baudrate_cB, self.baudrate_cB_1, self.baudrate_cB_2]
 
         for i in range(3):
-            self.init_btns[i].clicked.connect(lambda: self.serial_connect(i))
-            self.send_btns[i].clicked.connect(lambda: self.write_data(i))
-            self.cmd_widgets[i].returnPressed.connect(lambda: self.write_data(i))
+            self.init_btns[i].clicked.connect(lambda _, idx=i: self.serial_connect(idx))
+            self.send_btns[i].clicked.connect(lambda _, idx=i: self.write_data(idx))
+            self.cmd_widgets[i].returnPressed.connect(
+                lambda idx=i: self.write_data(idx)
+            )
+        self.add_ports()
 
         self.addline.connect(self.log_TE.append)
 
         self.serial_handlers: list[SerialHandler] = [
-            SerialHandler(0, "ff0000"),
-            SerialHandler(1, "cccc00"),
-            SerialHandler(2, "0000ff"),
+            SerialHandler(0, COLORS_DEVICES[0]),
+            SerialHandler(1, COLORS_DEVICES[1]),
+            SerialHandler(2, COLORS_DEVICES[2]),
         ]
-        for handler in self.serial_handlers:
+        for i, handler in enumerate(self.serial_handlers):
             handler.data_received.connect(
-                lambda msg, color: self.addline.emit(self.color(msg, color))
+                lambda msg, h=handler, idx=i: self.addline.emit(
+                    self.color(msg, COLORS_DEVICES[idx])
+                )
             )
 
         self.script_executor = ScriptExecutor(self.serial_handlers)
@@ -361,7 +387,9 @@ class ExampleApp(QtWidgets.QMainWindow, labctl_ui.Ui_MainWindow):
         try:
             handler = self.serial_handlers[index]
             handler.connect(port, baudrate)
-            self._statusbar_message("Just connected to {}...".format(port))
+            self._statusbar_message(
+                f"Just connected channel {index} to {port} with baud rate {baudrate}..."
+            )
 
             # Enable buttons based on index
             self.send_btns[index].setEnabled(True)
@@ -384,7 +412,7 @@ class ExampleApp(QtWidgets.QMainWindow, labctl_ui.Ui_MainWindow):
             if not line.strip():
                 continue
             message = "{}\n".format(line.strip())
-            handler.write(message)
+            handler.send(message)
             self.addline.emit(
                 self.color("{}".format(message.rstrip("\n")), handler.default_color)
             )
@@ -403,7 +431,7 @@ class ExampleApp(QtWidgets.QMainWindow, labctl_ui.Ui_MainWindow):
     def closeEvent(self, *args, **kwargs):
         super(QtWidgets.QMainWindow, self).closeEvent(*args, **kwargs)
         self.scriptmode_active = False
-        self.timeToEnd.set()
+        # self.timeToEnd.set()
         self.close_connection()
         print("Wait few seconds.. trying to kill few surviving threads..")
 

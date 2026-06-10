@@ -8,6 +8,13 @@ from labctl.devices.base import DeviceBase
 
 class BncPdgCmds(DeviceBase):
     """Low-level command wrapper for BNC pulse delay generators."""
+    def preferred_baud_rate(self):
+        return 115200
+
+    def verify_device(self):
+        super().verify_device()
+
+        self.parent.test(self, "*IDN?", "BNC", allow_overflow=True)
 
     @staticmethod
     def get_channel_number(channel: str) -> int:

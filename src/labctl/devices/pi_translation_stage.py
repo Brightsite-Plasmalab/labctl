@@ -11,6 +11,15 @@ class PiTranslationStage(DeviceBase):
 
     x_current: float
 
+    def verify_device(self):
+        super().verify_device()
+        self.parent.test(
+            self, "*IDN?", "(c)2018 Physik Instrumente", allow_overflow=True
+        )
+
+    def preferred_baud_rate(self):
+        return 115200
+
     def stop(self) -> None:
         """Stop the motion of all axes immediately"""
         self.append("STP")

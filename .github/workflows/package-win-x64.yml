@@ -1,0 +1,35 @@
+name: package-win-x64
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: src/labctl-ui
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: src/labctl-ui/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Package Windows x64 app
+        run: npm run package:win:x64
+
+      - name: Upload Windows x64 artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: labctl-win-x64
+          path: src/labctl-ui/dist/win-*-unpacked/**
+          if-no-files-found: error
