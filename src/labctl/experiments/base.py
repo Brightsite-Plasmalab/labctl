@@ -107,7 +107,7 @@ class BaseExperiment(ABC):
         """
         pass
 
-    def save_labctl_script(self, dest: os.PathLike | str | None = None):
+    def save_labctl_script(self, dest: os.PathLike | str | None = None, overwrite=False):
         """Generate and persist the labctl script.
 
         Parameters
@@ -123,12 +123,15 @@ class BaseExperiment(ABC):
         if dest is None:
             dest = self.dest_folder / (self.file_name + ".labctl")
 
+        if not overwrite and pathlib.Path(dest).exists():
+            raise FileExistsError(f"File already exists: {dest}")
+
         cmds = self.make_labctl_script()
         cmds.write(dest)
 
         return dest
 
-    def save_postprocessing_script(self, dest: os.PathLike | str | None = None):
+    def save_postprocessing_script(self, dest: os.PathLike | str | None = None, overwrite=False):
         """Generate and persist the postprocessing script.
 
         Parameters
@@ -145,6 +148,9 @@ class BaseExperiment(ABC):
         if dest is None:
             dest = self.dest_folder / (self.file_name + "_process.py")
 
+        if not overwrite and pathlib.Path(dest).exists():
+            raise FileExistsError(f"File already exists: {dest}")
+
         script = self.make_postprocessing_script()
         with open(dest, "w") as f:
             f.write(script)
@@ -154,6 +160,7 @@ class BaseExperiment(ABC):
     def save_postprocessing_info(
         self,
         dest_info: os.PathLike | str | None = None,
+        overwrite=False
     ) -> pathlib.Path | os.PathLike | str:
         """Persist postprocessing metadata as a pickle file.
 
@@ -169,6 +176,10 @@ class BaseExperiment(ABC):
         """
         if dest_info is None:
             dest_info = self.dest_folder / (self.file_name + ".pkl")
+
+        if not overwrite and pathlib.Path(dest_info).exists():
+            raise FileExistsError(f"File already exists: {dest_info}")
+
         info_obj = self.make_postprocessing_info()
 
         with open(dest_info, "wb") as f:
@@ -176,8 +187,8 @@ class BaseExperiment(ABC):
 
         return dest_info
 
-    def save_all(self) -> None:
+    def save_all(self, overwrite=False) -> None:
         """Save script, metadata, and postprocessing helper script."""
-        self.save_labctl_script()
-        self.save_postprocessing_info()
-        self.save_postprocessing_script()
+        self.save_labctl_script(overwrite=overwrite)
+        self.save_postprocessing_info(overwrite=overwrite)
+        self.save_postprocessing_script(overwrite=overwrite)

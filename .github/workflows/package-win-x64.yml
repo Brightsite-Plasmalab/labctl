@@ -31,5 +31,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: labctl-win-x64
-          path: src/labctl-ui/dist/win-*-unpacked/**
+          path: src/labctl-ui/dist/win-*unpacked/**
           if-no-files-found: error
