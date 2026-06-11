@@ -389,7 +389,7 @@ class CameraExperiment(BaseExperiment):
 
         # Setting for camera channel
         self.pdg.channel_gate(self.camera_channel, "LOW")
-        self.pdg.channel_mode(self.camera_channel, "BURS")
+        # self.pdg.channel_mode(self.camera_channel, "BURS")
         # self.pdg.enable(self.camera_channel, True)  do not enable channel, this will start the pulsing
 
         # For every iteration of measurements ...
