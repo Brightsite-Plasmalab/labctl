@@ -1,13 +1,15 @@
 import numpy as np
 import pytest
 
-from labctl.experiments.camera import BackgroundConfiguration
-from labctl.experiments.camera_timesweep import CameraTimesweepExperiment
-from labctl.experiments.polarisation import PolarisationFilterExperiment
-from labctl.experiments.polarisation_sweep import PolarisationFilterSweepExperiment
-from labctl.experiments.pulsed_microwave import PulsedMicrowaveTimesweep
-from labctl.experiments.raman_2d import Raman2DExperiment
-from labctl.experiments.translation_stage import TranslationStageExperiment
+from labctl.experiments import (
+    BackgroundConfiguration,
+    CameraTimesweepExperiment,
+    PolarisationFilterExperiment,
+    PolarisationFilterSweepExperiment,
+    PulsedMicrowaveTimesweep,
+    Raman2DExperiment,
+    TranslationStageExperiment,
+)
 
 
 def _build_experiment_instance(

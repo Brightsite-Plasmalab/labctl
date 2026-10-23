@@ -2,7 +2,7 @@
 import pytest
 
 from labctl.experiments.polarisation_sweep import PolarisationFilterSweepExperiment
-from labctl.experiments.pulsed_microwave import PulsedMicrowaveTimesweep
+from labctl.experiments.pulsed_microwave_timesweep import PulsedMicrowaveTimesweep
 
 
 def _base_camera_kwargs(**overrides):

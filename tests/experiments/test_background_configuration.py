@@ -21,7 +21,10 @@ from labctl.experiments.camera_timesweep import CameraTimesweepExperiment
 def test_make_name_list_expected_sequences(
     config: BackgroundConfiguration, foreground_num: int, expected: list[str]
 ):
-    assert config.make_name_list(foreground_num) == expected
+    names = config.make_name_list(foreground_num)
+    if names != expected:
+        msg = f"{names} != {expected}"
+        raise ValueError(msg)
 
 
 @pytest.mark.parametrize("config", list(BackgroundConfiguration))

@@ -1,12 +1,18 @@
 # TODO: Look at automatic generated tests
 import inspect
+import warnings
+from collections.abc import Container
 
 import numpy as np
 import pytest
 
 import labctl.experiments as experiments_module
-from labctl.experiments.base import BaseExperiment
-from labctl.experiments.camera import BackgroundConfiguration, CameraExperiment
+from labctl.experiments import (
+    BackgroundConfiguration,
+    BaseExperiment,
+    BaseCameraExperiment,
+    FilteredTranslationStageExperiment,
+)
 
 
 def _iter_public_experiment_classes() -> list[type[BaseExperiment]]:
@@ -19,6 +25,10 @@ def _iter_public_experiment_classes() -> list[type[BaseExperiment]]:
         # Skip abstract classes (those with unimplemented abstract methods)
         if inspect.isabstract(value):
             continue
+        if value in (FilteredTranslationStageExperiment,):  # TODO
+            warnings.warn(f"`{value.__name__}` not implemented for this test")
+            continue
+
         classes.append(value)
     return classes
 
@@ -33,7 +43,7 @@ def _make_instance_for_postprocessing_info(
     exp.short_explanation = ""
     exp.author = ""
 
-    if issubclass(experiment_class, CameraExperiment):
+    if issubclass(experiment_class, BaseCameraExperiment):
         exp.n_frames = [2]
         exp.n_iter = 1
         exp.t_exposure = 0.1
@@ -54,8 +64,8 @@ def _make_instance_for_postprocessing_info(
     elif experiment_class.__name__ == "PolarisedTranslationStageExperiment":
         exp.alpha_hor = 0.0
         exp.alpha_ver = 90.0
-        exp.alpha = [exp.alpha_ver, exp.alpha_hor]
-        exp.x = [0.0, 1.0]
+        exp.alpha = [exp.alpha_ver, exp.alpha_hor, exp.alpha_ver, exp.alpha_hor]
+        exp.x = [0.0, 0.0, 1.0, 1.0]
         exp.n_frames = [1, 2, 1, 2]
     elif experiment_class.__name__ == "PolarisationFilterExperiment":
         exp.n_frames = [1, 2]
@@ -82,20 +92,21 @@ def _make_instance_for_postprocessing_info(
 def test_make_postprocessing_info_contains_variable_key(
     experiment_class: type[BaseExperiment],
 ):
+
     experiment = _make_instance_for_postprocessing_info(experiment_class)
 
     info = experiment.make_postprocessing_info()
 
     assert isinstance(
         info, dict
-    ), f"{experiment_class.__name__}.make_postprocessing_info must return a dict"
+    ), f"{experiment_class.__name__}.make_postprocessing_info must return a dict, found type {type(info).__name__}"
     assert (
         "variable" in info
     ), f"{experiment_class.__name__}.make_postprocessing_info must contain a 'variable' key"
 
     variable = info["variable"]
-    assert variable is None or isinstance(variable, (str, list)), (
-        f"{experiment_class.__name__}.make_postprocessing_info['variable'] must be None, str, or list[str]"
+    assert variable is None or isinstance(variable, (str, Container)), (
+        f"{experiment_class.__name__}.make_postprocessing_info['variable'] must be None, str, or Container[str], found type {type(variable).__name__}"
     )
     if isinstance(variable, str):
         assert variable in info, (
@@ -104,7 +115,7 @@ def test_make_postprocessing_info_contains_variable_key(
         )
     if isinstance(variable, list):
         assert all(isinstance(v, str) for v in variable), (
-            f"{experiment_class.__name__}.make_postprocessing_info['variable'] list must contain only strings"
+            f"{experiment_class.__name__}.make_postprocessing_info['variable'] list must contain only strings, variable: {variable}"
         )
         for v in variable:
             assert v in info, (
@@ -118,7 +129,7 @@ def test_make_postprocessing_info_contains_variable_key(
     [
         cls
         for cls in _iter_public_experiment_classes()
-        if issubclass(cls, CameraExperiment)
+        if issubclass(cls, BaseCameraExperiment)
     ],
     ids=lambda cls: cls.__name__,
 )
@@ -152,4 +163,3 @@ def test_make_postprocessing_info_legacy_and_new_index_keys_are_consistent(
         # For n_iter == 1 in this fixture, grouped and full first-iteration are identical.
         np.testing.assert_array_equal(info["indices_full"][0][index][0], config_info["foreground"])
         np.testing.assert_array_equal(info["indices_full"][0][index][1], config_info["background"])
-

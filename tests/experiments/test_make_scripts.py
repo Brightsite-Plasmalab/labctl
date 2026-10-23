@@ -13,11 +13,10 @@ from labctl.experiments.polarisation_sweep import (
 from labctl.experiments.polarised_translation_stage import (
     PolarisedTranslationStageExperiment,
 )
-from labctl.experiments.pulsed_microwave import PulsedMicrowaveTimesweep
+from labctl.experiments.pulsed_microwave_timesweep import PulsedMicrowaveTimesweep
 from labctl.experiments.raman_2d import Raman2DExperiment
 from labctl.experiments.simple import SimpleCameraExperiment
 from labctl.experiments.translation_stage import TranslationStageExperiment
-
 
 # ---------------------------------------------------------------------------
 # Shared helpers
