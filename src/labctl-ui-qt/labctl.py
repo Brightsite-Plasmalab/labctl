@@ -1,16 +1,13 @@
-# TODO: Is there a way to stop the BNC pulsing for the camera when stopping file execution?
-
-import sys
-import time
-import threading
 import queue
-from typing import Optional
+import sys
+import threading
+import time
 
 import serial
-from serial.tools.list_ports import comports
-from PyQt5.QtWidgets import QMessageBox, QApplication
-from PyQt5.QtCore import pyqtSignal, QObject
 from PyQt5 import QtWidgets
+from PyQt5.QtCore import QObject, pyqtSignal
+from PyQt5.QtWidgets import QApplication, QMessageBox
+from serial.tools.list_ports import comports
 
 try:
     import winsound
@@ -33,17 +30,17 @@ class SerialHandler(QObject):
     """Manages a single serial connection and its retrieval thread."""
 
     data_received = pyqtSignal(str)  # message
-    newline_chars: bytes = SERIAL_NEWLINE_CHARS
+    newline_chars: str = SERIAL_NEWLINE_CHARS
     default_color: str = "000000"
 
     def __init__(
-        self, index: int, color: str, newline_chars: bytes = SERIAL_NEWLINE_CHARS
+        self, index: int, color: str, newline_chars: str = SERIAL_NEWLINE_CHARS
     ):
         super().__init__()
         self.index = index
         self.default_color = color
-        self.conn: Optional[serial.Serial] = None
-        self.thread: Optional[threading.Thread] = None
+        self.conn: serial.Serial | None = None
+        self.thread: threading.Thread | None = None
         self.listening = False
         self.newline_chars = newline_chars
         self.stop_event = threading.Event()
@@ -74,7 +71,10 @@ class SerialHandler(QObject):
         if self.conn and self.conn.is_open:
             self.conn.write(f"{message}{self.newline_chars}".encode("ascii"))
 
-    def query(self, command: str, timeout: float = 1.0) -> Optional[str]:
+    def flush(self):
+        self.conn.flush()
+
+    def query(self, command: str, timeout: float = 1.0) -> str | None:
         """Send a command and wait for the response within a given timeout.
 
         Reads from the shared receive queue so it is safe to call while
@@ -104,7 +104,7 @@ class SerialHandler(QObject):
                         # then also emit for live UI display.
                         self._rx_queue.put(clean_msg)
                         self.data_received.emit(clean_msg)
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001
                     print(f"Error reading from serial {self.index}: {e}")
                     break
             time.sleep(0.01)
@@ -127,6 +127,7 @@ class ScriptExecutor(QObject):
         self.cmd_list: list[str] = []
         self.line_number = 0
         self.filename = ""
+        self._full_log = []
 
     def start(self, filename: str):
         self.filename = filename
@@ -139,7 +140,7 @@ class ScriptExecutor(QObject):
             with open(filename, "r") as f:
                 self.cmd_list = [line.strip() for line in f]
             threading.Thread(target=self._run_loop, daemon=True).start()
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             self.status_message.emit(f"Failed to open script: {e}", True)
             self.script_finished.emit()
 
@@ -150,7 +151,7 @@ class ScriptExecutor(QObject):
     def _run_loop(self):
         timestamp = time.strftime("%H_%M_%S", time.localtime())
         log_filename = self.filename.replace(".labctl", f"_log_{timestamp}.txt")
-        full_log = []
+        self._full_log = []
 
         while self.cmd_list and self.is_running and not self.stop_event.is_set():
             self.line_number += 1
@@ -163,7 +164,7 @@ class ScriptExecutor(QObject):
             if raw_command:
                 cmd_part, _, comment = raw_command.partition("#")
                 if comment.strip():
-                    self._log(comment.strip(), COLOR_LOG)
+                     self._log(comment.strip(), COLOR_LOG)
                 if raw_command.strip().startswith("#"):
                     # Only a comment or a Meta Command
                     if self._handle_meta_command(raw_command):
@@ -179,7 +180,7 @@ class ScriptExecutor(QObject):
             handler.send(command)
             self._log(command.strip(), handler.default_color)
 
-            time.sleep(self.delay_submission)
+            # time.sleep(self.delay_submission)
 
         self.is_running = False
         self._log("LOG: Script execution finished.", COLOR_LOG)
@@ -188,9 +189,9 @@ class ScriptExecutor(QObject):
         # Save log file at the end
         try:
             with open(log_filename, "w") as f:
-                f.write("\n".join(full_log))
-        except Exception:
-            pass
+                f.write("\n".join(self._full_log))
+        except Exception:  # noqa: BLE001
+            self.status_message.emit("Could not write the log file", True)
 
     def _handle_meta_command(self, cmd: str) -> bool:
         if cmd.startswith("#WAIT"):
@@ -198,6 +199,9 @@ class ScriptExecutor(QObject):
                 ms = int(cmd[5:].strip())
                 self._log(f"Waiting for {ms} ms", COLOR_META)
                 time.sleep(ms / 1000.0)
+                handler = self.serial_handlers[self.current_selser]
+                handler.flush()
+                self._log(f"Flushing COM port {self.current_selser}", COLOR_META)
                 return True
             except ValueError:
                 pass
@@ -216,7 +220,7 @@ class ScriptExecutor(QObject):
             self._log("Beep!", COLOR_META)
             try:
                 winsound.MessageBeep()
-            except:
+            except:  #noqa: E722, S110
                 pass
             return True
         elif cmd.startswith("#TEST"):
@@ -224,7 +228,7 @@ class ScriptExecutor(QObject):
                 # Format: #TEST command == expected_result # comment
                 # or:     #TESTn command == expected_result # comment
                 # where n limits comparison to the first n characters of the response
-                prefix = cmd.split()[0]  # e.g. "#TEST" or "#TEST3"
+                prefix = cmd.split(maxsplit=1)[0]  # e.g. "#TEST" or "#TEST3"
                 char_limit_str = prefix[5:]  # everything after "#TEST"
                 char_limit = int(char_limit_str) if char_limit_str else None
 
@@ -273,7 +277,7 @@ class ScriptExecutor(QObject):
                             f"Verification failed{label}: No response", True
                         )
                     return True
-            except Exception as e:
+            except Exception as e:  #noqa: BLE001
                 self._log(f"Error in #RESULT: {e}", COLOR_TEST_FAILURE)
         return False
 
@@ -281,18 +285,19 @@ class ScriptExecutor(QObject):
         timestamp = time.strftime("%H:%M:%S", time.localtime())
         formatted = f"{timestamp} | Line {self.line_number}: {message}"
         self.add_log.emit(formatted, color)
+        self._full_log.append(formatted)
 
 
 class ExampleApp(QtWidgets.QMainWindow, labctl_ui.Ui_MainWindow):
     addline = pyqtSignal(str)
-    ports: list[str] = []
-    init_btns: list[QtWidgets.QPushButton] = []
-    send_btns: list[QtWidgets.QPushButton] = []
-    cmd_widgets: list[QtWidgets.QLineEdit] = []
-    port_widgets: list[QtWidgets.QComboBox] = []
-    baud_widgets: list[QtWidgets.QComboBox] = []
-    serial_handlers: list[SerialHandler] = []
-    script_executor: Optional[ScriptExecutor] = None
+    ports: list[str] = []  # noqa: RUF012
+    init_btns: list[QtWidgets.QPushButton] = []  # noqa: RUF012
+    send_btns: list[QtWidgets.QPushButton] = []  # noqa: RUF012
+    cmd_widgets: list[QtWidgets.QLineEdit] = []  # noqa: RUF012
+    port_widgets: list[QtWidgets.QComboBox] = []  # noqa: RUF012
+    baud_widgets: list[QtWidgets.QComboBox] = []  # noqa: RUF012
+    serial_handlers: list[SerialHandler] = []  # noqa: RUF012
+    script_executor: ScriptExecutor | None = None
     scriptmode_active: bool = False
 
     def __init__(self):
@@ -393,7 +398,7 @@ class ExampleApp(QtWidgets.QMainWindow, labctl_ui.Ui_MainWindow):
 
             # Enable buttons based on index
             self.send_btns[index].setEnabled(True)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             self._statusbar_message(f"Failed to connect to {port}: {e}", True)
 
     def add_ports(self):
@@ -411,7 +416,7 @@ class ExampleApp(QtWidgets.QMainWindow, labctl_ui.Ui_MainWindow):
         for line in commands:
             if not line.strip():
                 continue
-            message = "{}\n".format(line.strip())
+            message = f"{line.strip()}\n"
             handler.send(message)
             self.addline.emit(
                 self.color("{}".format(message.rstrip("\n")), handler.default_color)
