@@ -2,17 +2,20 @@
 
 from typing import Unpack
 
-from labctl.experiments.polarisation import PolarisationFilterExperimentKwargs
-from labctl.experiments.translation_stage import TranslationStageExperimentKwargs
+from labctl.experiments.polarisation import (
+    PolarisationFilterExperiment,
+    PolarisationFilterExperimentKwargs,
+)
+from labctl.experiments.translation_stage import (
+    TranslationStageExperiment,
+    TranslationStageExperimentKwargs,
+)
 from labctl.script import Script
-from labctl.experiments.polarisation import PolarisationFilterExperiment
-from labctl.experiments.translation_stage import TranslationStageExperiment
 
 
 class PolarisedTranslationStageExperimentKwargs(TranslationStageExperimentKwargs, PolarisationFilterExperimentKwargs):
     """Keyword arguments for :class:`PolarisedTranslationStageExperiment`."""
 
-    pass
 
 class PolarisedTranslationStageExperiment(
     PolarisationFilterExperiment, TranslationStageExperiment
@@ -28,17 +31,26 @@ class PolarisedTranslationStageExperiment(
             Combined translation and polarization experiment configuration.
         """
         n_x = len(kwargs["x"])
+        kwargs["x"] = [x for x in kwargs["x"] for _ in range(2)]
 
         # Make sure there are n_x * N_pol (2) configurations.
         # If there are just n_x configurations, repeat each N_pol (2) times.
 
-        if len(kwargs["n_frames"]) == n_x:
-            kwargs["n_frames"] = [n for n in kwargs["n_frames"] for _ in range(2)]
+        n_frames = kwargs["n_frames"]
+        if isinstance(n_frames, int):
+            n_frames = [n_frames for _ in range(n_x)]
+        if len(n_frames) == n_x:
+            n_frames = [n for n in n_frames for _ in range(2)]
+        kwargs["n_frames"] = n_frames
 
         super().__init__(**kwargs)
+        self.alpha = [a for _ in range(n_x) for a in self.alpha]
 
         if type(self) is PolarisedTranslationStageExperiment:
-            self.check_N_frames(2*len(self.x), " Two configurations for each translation position (one for each polarization).")
+            self.check_N_frames(len(self.x), " Two configurations for each translation position (one for each polarization).")
+        if len(self.x) != len(self.alpha):
+            msg = f"Internal errror: different number of angles ({len(self.alpha)}) and positions ({len(self.x)})"
+            raise ValueError(msg)
 
     def get_config_names(self) -> list[str]:
         """Return combined config names in translation-major order.
@@ -49,11 +61,11 @@ class PolarisedTranslationStageExperiment(
             Names formatted as ``<translation>_<polarization>``.
         """
         config_names_translation = TranslationStageExperiment.get_config_names(self)
-        config_names_polarisation = PolarisationFilterExperiment.get_config_names(self)
+        config_names_polarisation = PolarisationFilterExperiment.get_config_names(self) * (len(config_names_translation) // 2)
+
         return [
             f"{cn_t}_{cn_p}"
-            for cn_t in config_names_translation
-            for cn_p in config_names_polarisation
+            for cn_t, cn_p in zip(config_names_translation, config_names_polarisation, strict=True)
         ]
 
     def make_labctl_header(self) -> Script:
@@ -66,35 +78,6 @@ class PolarisedTranslationStageExperiment(
         """
         return super().make_labctl_header()
         # super(PolarisationFilterExperiment, self).make_labctl_header()
-
-    def prepare_experiment(self, cmds: Script):
-        """Prepare both translation and polarization hardware.
-
-        Parameters
-        ----------
-        cmds : Script
-            Script command collector.
-        """
-        super(TranslationStageExperiment, self).prepare_experiment(cmds)
-        super(PolarisationFilterExperiment, self).prepare_experiment(cmds)
-
-    def prepare_config(self, cmds: Script, i: int) -> None:
-        """Apply translation and polarization settings for config ``i``.
-
-        Parameters
-        ----------
-        cmds : Script
-            Script command collector.
-        i : int
-            Flattened configuration index.
-        """
-        super(TranslationStageExperiment, self).prepare_config(cmds, i // 2)
-        super(PolarisationFilterExperiment, self).prepare_config(cmds, i % 2)
-
-    def shutdown_experiment(self) -> None:
-        """Shutdown both translation and polarization hardware."""
-        super(TranslationStageExperiment, self).shutdown_experiment()
-        super(PolarisationFilterExperiment, self).shutdown_experiment()
 
     def make_postprocessing_info(self) -> dict[str, object]:
         """Build postprocessing metadata for the combined sweep.
@@ -110,7 +93,7 @@ class PolarisedTranslationStageExperiment(
         alpha = list(self.alpha) * len(self.x)
         info.update(
             {
-                "variable": ["translation_loc", "alpha"],
+                "variable": ("translation_loc", "alpha"),
                 "translation_loc": translation_loc,
                 "alpha": alpha,
             }
