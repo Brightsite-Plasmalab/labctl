@@ -1,13 +1,15 @@
 """Pulsed-microwave camera experiment definitions."""
+import re
+from typing import NotRequired
 
+import numpy as np
 from typing_extensions import Unpack
 
+from labctl.experiments.camera import BaseCameraExperiment, BaseCameraExperimentKwargs
 from labctl.script import Script
-from labctl.experiments.camera import CameraExperiment, CameraExperimentKwargs
-import re
 
 
-class PulsedMicrowaveTimesweepKwargs(CameraExperimentKwargs):
+class PulsedMicrowaveTimesweepKwargs(BaseCameraExperimentKwargs):
     """Keyword arguments for :class:`PulsedMicrowaveTimesweep`."""
 
     MW_pulse_frequency: int  # Frequency of the microwave pulse
@@ -15,9 +17,10 @@ class PulsedMicrowaveTimesweepKwargs(CameraExperimentKwargs):
     t0: float  # Time delay such that the start of the laser pulse synchronizes with the start of the microwave pulse,
     # should be ~100ns
     delta_t: list[float]  # List of time delays to sweep, relative to t0
+    microwave_steps: NotRequired[int]
 
 
-class PulsedMicrowaveTimesweep(CameraExperiment):
+class PulsedMicrowaveTimesweep(BaseCameraExperiment):
     """
     This experiment sweeps the delay of a pulsed microwave signal with respect to the laser (and camera).
 
@@ -37,7 +40,8 @@ class PulsedMicrowaveTimesweep(CameraExperiment):
         delta_t: list[float],
         MW_pulse_frequency: int,
         channel_MW_trigger: str,
-        **kwargs: Unpack[CameraExperimentKwargs],
+        microwave_steps: int = 10,
+        **kwargs: Unpack[BaseCameraExperimentKwargs],
     ) -> None:
         """Initialize a pulsed microwave delay sweep.
 
@@ -51,7 +55,9 @@ class PulsedMicrowaveTimesweep(CameraExperiment):
             Microwave pulse frequency in Hz.
         channel_MW_trigger : str
             PDG channel used to trigger microwaves.
-        **kwargs : Unpack[CameraExperimentKwargs]
+        microwave_steps : int
+            The number of intermediate microwave delay steps to take between settings, default value is 10.
+        **kwargs : Unpack[BaseCameraExperimentKwargs]
             Base camera experiment settings.
 
         Raises
@@ -65,6 +71,7 @@ class PulsedMicrowaveTimesweep(CameraExperiment):
         self.channel_MW_trigger_int = (
             ord(channel_MW_trigger) - ord("A") + 1
         )  # Channel A -> 0, B -> 1, ...
+        self.microwave_steps = microwave_steps
 
         # Perform some checks to see if all inputs are valid
         if self.channel_MW_trigger_int < 3 or self.channel_MW_trigger_int > 8:
@@ -90,7 +97,7 @@ class PulsedMicrowaveTimesweep(CameraExperiment):
         T0_str = f"{1/self.MW_pulse_frequency:,.10f}"
         # add space every 3 digits after the decimal point
         T0_str = re.sub(r"((?<=\.\d{3})|(?<=\.\d{6})|(?<=\.\d{9}))(\d)", r" \2", T0_str)
-        print(f"Microwave pulse delay generator:")
+        print("Microwave pulse delay generator:")
         print(f"\t T0: {T0_str} s")
         print(f"\t Burst count: {multiple}")
         print(f"Channel {self.channel_MW_trigger} is used for the MW trigger")
@@ -152,6 +159,20 @@ class PulsedMicrowaveTimesweep(CameraExperiment):
 
     def prepare_config(self, cmds: Script, i: int) -> None:
         """Prepares experimental configuration i."""
+
+        if self.microwave_steps > 0:
+            start = 0
+            if i > 0:
+                start = self.get_mw_delay(i-1)
+            end = self.get_mw_delay(i)
+
+            delta = (end - start) / (self.microwave_steps + 1)
+            values = np.linspace(start + delta, end, self.microwave_steps, endpoint=False)
+
+            for val in values:
+                self.pdg.delay(self.channel_MW_trigger_int, val)
+                cmds.pause(100)
+
         self.pdg.delay(self.channel_MW_trigger_int, self.get_mw_delay(i))
         cmds.pause(1000)
 
@@ -164,4 +185,3 @@ class PulsedMicrowaveTimesweep(CameraExperiment):
 
     def shutdown_experiment(self) -> None:
         """Shutdown the experiment. Inherit this method to add more commands."""
-        pass
