@@ -157,7 +157,7 @@ def typed_dict_func_class_same(test_value, test_typed_dict,
         k: v.annotation for k, v in sig.items() if selector(k, v)
     }
     test_class_defaults = [
-        k for k, v in sig.items() if k != "self" and v.default != inspect._empty
+        k for k, v in sig.items() if selector(k, v) and v.default != inspect._empty
     ]
 
     typed_dict_params = inspect.get_annotations(test_typed_dict)

@@ -9,10 +9,10 @@ import pytest
 import labctl.experiments as experiments_module
 from labctl.experiments import (
     BackgroundConfiguration,
-    BaseExperiment,
     BaseCameraExperiment,
     FilteredTranslationStageExperiment,
 )
+from labctl.experiments.base import BaseExperiment
 
 
 def _iter_public_experiment_classes() -> list[type[BaseExperiment]]:
@@ -48,6 +48,8 @@ def _make_instance_for_postprocessing_info(
         exp.n_iter = 1
         exp.t_exposure = 0.1
         exp.background_every = BackgroundConfiguration.NONE
+        exp.camera_delay_optimum = 0.0
+        exp.camera_delay_background = 0.0
 
     if experiment_class.__name__ in {
         "CameraTimesweepExperiment",
@@ -57,7 +59,6 @@ def _make_instance_for_postprocessing_info(
         exp.n_frames = [1, 2]
         exp.t0 = 0.0
         exp.delta_t = [0.0, 1.0]
-        exp.camera_delay_optimum = 0.0
     elif experiment_class.__name__ == "PolarisationFilterSweepExperiment":
         exp.alpha = [0.0, 1.0, 2.0, 3.0]
         exp.n_frames = [1, 2, 1, 3]

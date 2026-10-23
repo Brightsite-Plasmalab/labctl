@@ -97,6 +97,7 @@ def test_postprocessing_indices_follow_generated_schedule_for_single_iteration()
     exp.t_exposure = 0.1
     exp.background_every = BackgroundConfiguration.BEGIN_END
     exp.camera_delay_optimum = 0.0
+    exp.camera_delay_background = 0.0
     exp.t0 = 0.0
     exp.delta_t = [0.0, 1.0]
 

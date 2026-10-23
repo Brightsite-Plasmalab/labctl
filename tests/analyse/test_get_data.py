@@ -116,10 +116,13 @@ def test_get_data_rejects_invalid_crop_ranges(kwargs):
 
 def test_get_data_accepts_custom_callable_config_flattener():
     """A user-provided accumulator callable should be accepted and applied per config."""
+    def config_flattener(x, *, axis):
+        return np.max(x, axis=axis)
+
     measurement = read_data_module.get_data(
         str(REAL_SIF),
         str(REAL_PKL),
-        config_flattener=lambda x: np.max(x, axis=-3),
+        config_flattener=config_flattener,
     )
 
     assert measurement.intensity.shape == (2, 1024, 1024)
