@@ -12,5 +12,5 @@ For most of the functionality in the :mod:`labctl.analysis` submodule, you need 
 
 .. code-block:: bash
 
-   uv add "git+https://github.com" --group test
+   uv add "git+https://github.com" --group analysis
    uv sync
