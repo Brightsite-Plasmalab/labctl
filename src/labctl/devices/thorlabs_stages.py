@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from labctl.devices.base import DeviceBase
+from labctl.script.device_base import DeviceBase
 
 # Communications protocol: 'FSE-CCE PlasmaLab - General/manuals and quotes/Thorlabs/stages/Thorlabs_Rotation_mount_ELL14-Manual.pdf'
 
