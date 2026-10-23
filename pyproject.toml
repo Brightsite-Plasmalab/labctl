@@ -4,11 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "labctl"
-version = '0.0.2'
-requires-python = ">=3.10"
+version = "0.0.2"
+requires-python = ">=3.11"
 dependencies = [
+    "ipykernel>=7.3.0",
     "numpy",
-    "scipy",
     "typing-extensions",
 ]
 
@@ -25,13 +25,25 @@ where = ["src"]
 
 [dependency-groups]
 analysis = [
-    "matplotlib>=3.10.9",
     "sif-parser>=0.3.6",
+    "matplotlib>=3.10.7",
+    "scipy",
 ]
 dev = [
     "pytest>=9.0.3",
     "pytest-cov>=7.1.0",
     "pyrefly>=0.60.0",
+    "scipy-stubs[scipy]",
+    "ruff>=0.16.10",
+
+    "sphinx>=9.0.4",
+    "pydata-sphinx-theme>=0.23.0",
+    "sphinx-autodoc-typehints",
+    {include-group = "analysis"},
+]
+gui = [
+    "pyserial>=3.5",
+    "PyQt5",
 ]
 
 [tool.pytest.ini_options]
