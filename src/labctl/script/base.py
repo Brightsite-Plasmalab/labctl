@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
-from os import PathLike
-from typing import Self, Collection
+from collections.abc import Collection
 from copy import deepcopy
-
-from typing_extensions import Union
+from os import PathLike
+from typing import Self
 
 
 class ScriptBase:
@@ -18,7 +17,7 @@ class ScriptBase:
         """Initialize an empty script line buffer."""
         self.lines = []
 
-    def append(self, commands: Union[str, Collection[str]]) -> None:
+    def append(self, commands: str | Collection[str]) -> None:
         """Append one or many command lines.
 
         Parameters
@@ -32,7 +31,7 @@ class ScriptBase:
             for x in commands:
                 self.append(x)
         else:
-            raise Exception(f"Invalid command type: {type(commands)}")
+            raise TypeError(f"Invalid command type: {type(commands)}")
 
     def print(self) -> None:
         """Print all script lines to standard output."""

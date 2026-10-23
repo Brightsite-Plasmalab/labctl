@@ -3,12 +3,8 @@
 import os
 import pathlib
 import pickle as pkl
-from collections.abc import Sequence
-from typing import TypedDict
 from abc import ABC, abstractmethod
-
-from typing_extensions import NotRequired
-import numpy as np
+from typing import NotRequired, TypedDict
 
 
 class BaseExperimentKwargs(TypedDict):
@@ -56,17 +52,14 @@ class BaseExperiment(ABC):
         Script
             Concrete script object containing all commands.
         """
-        pass
 
     @abstractmethod
     def prepare_config(self, cmds, i: int) -> None:
         """Prepares experimental configuration i."""
-        pass
 
     @abstractmethod
     def get_config_names(self) -> list[str]:
         """Get the human-readable names of the configurations."""
-        pass
 
     def make_postprocessing_info(self) -> dict[str, object]:
         """Build common postprocessing metadata.
@@ -83,20 +76,8 @@ class BaseExperiment(ABC):
             "experiment_type": type(self).__name__,
             "version": "0.0.2",
         }
-        # def to_list(value):
-        #     if isinstance(value, np.ndarray):
-        #         return value.tolist()
-        #     elif isinstance(value, Sequence) and not isinstance(value, str):
-        #         return to_list(value)
-        #     return value
-        #
-        # for key, value in info_obj.items():
-        #     info_obj[key] = to_list(info_obj[key])
-
-
         return info_obj
 
-    @abstractmethod
     def make_postprocessing_script(self) -> str:
         """Build a helper postprocessing script.
 
@@ -105,7 +86,7 @@ class BaseExperiment(ABC):
         str
             Python source code for postprocessing.
         """
-        pass
+        return ""
 
     def save_labctl_script(self, dest: os.PathLike | str | None = None, overwrite=False):
         """Generate and persist the labctl script.
