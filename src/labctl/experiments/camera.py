@@ -6,120 +6,19 @@ postprocessing.
 """
 
 import math
-import enum
-from typing import Unpack, cast
 import warnings
-from pathlib import Path
+from abc import ABC
+from typing import NotRequired, Unpack, cast
 
-from typing_extensions import NotRequired
 import numpy as np
 
-from labctl.script import Script
 from labctl.devices import BncPdgCmds
+from labctl.experiments import BackgroundConfiguration
 from labctl.experiments.base import BaseExperiment, BaseExperimentKwargs
+from labctl.script import Script
 
 
-class BackgroundConfiguration(enum.IntEnum):
-    """Background acquisition schedules for camera experiments."""
-
-    EVERY_FRAME = 1
-    NONE = 0
-    BEGIN = -1
-    END = -2
-    BEGIN_MIDDLE_END = -3
-    BEGIN_END = -4
-
-    def make_name_list(self, foreground_num: int) -> list[str]:
-        """Build foreground/background acquisition labels for one config.
-
-        Parameters
-        ----------
-        foreground_num : int
-            Number of foreground acquisitions.
-
-        Returns
-        -------
-        list[str]
-            Sequence containing ``"foreground"`` and ``"background"`` labels.
-        """
-        if foreground_num < 0:
-            msg = f"foreground_num must be at least 0, got {foreground_num}"
-            raise ValueError(msg)
-        if foreground_num == 0:
-            return []
-
-        if self > 0:
-            list_out = []
-            for i in range(foreground_num):
-                list_out.append("foreground")
-                if (i + 1) % self == 0:
-                    list_out.append("background")
-        elif self == BackgroundConfiguration.NONE:
-            list_out = ["foreground"] * foreground_num
-        elif self == BackgroundConfiguration.BEGIN:
-            list_out = ["background"] + ["foreground"] * foreground_num
-        elif self == BackgroundConfiguration.END:
-            list_out = ["foreground"] * foreground_num + ["background"]
-        elif self == BackgroundConfiguration.BEGIN_MIDDLE_END:
-            middle_index = foreground_num // 2
-            list_out = (
-                ["background"]
-                + ["foreground"] * middle_index
-                + ["background"]
-                + ["foreground"] * (foreground_num - middle_index)
-                + ["background"]
-            )
-        elif self == BackgroundConfiguration.BEGIN_END:
-            list_out = ["background"] + ["foreground"] * foreground_num + ["background"]
-        else:
-            msg = f"Invalid BackgroundConfiguration value, should be >0, 0, -1, -2, -3, or -4, got {self.value}"
-            raise ValueError(msg)
-
-        return list_out
-
-    def measurement_count(self, foreground_num: int) -> int:
-        """Return total measurements for a foreground count.
-
-        Parameters
-        ----------
-        foreground_num : int
-            Number of foreground acquisitions.
-
-        Returns
-        -------
-        int
-            Total acquisitions including background frames.
-        """
-        names = self.make_name_list(foreground_num)
-        return len(names)
-
-    def background_count(self, foreground_num: int) -> int:
-        """Return number of scheduled background frames.
-
-        Parameters
-        ----------
-        foreground_num : int
-            Number of foreground acquisitions.
-
-        Returns
-        -------
-        int
-            Number of background acquisitions.
-        """
-        return self.measurement_count(foreground_num) - foreground_num
-
-    def index_foreground(self, foreground_num: int) -> np.ndarray:
-        """Return foreground indices in one acquisition block."""
-        names = self.make_name_list(foreground_num)
-        return (np.asarray(names) == "foreground").nonzero()[0].astype(int)
-
-    def index_background(self, foreground_num: int) -> np.ndarray:
-        """Return background indices in one acquisition block."""
-        names = self.make_name_list(foreground_num)
-        return (np.asarray(names) == "background").nonzero()[0].astype(int)
-
-
-class CameraExperimentKwargs(BaseExperimentKwargs):
+class BaseCameraExperimentKwargs(BaseExperimentKwargs):
     """Keyword arguments accepted by :class:`CameraExperiment`."""
     n_frames: list[int] | int
     t_exposure: float
@@ -134,7 +33,7 @@ class CameraExperimentKwargs(BaseExperimentKwargs):
     camera_reset_time: NotRequired[float]
 
 
-class CameraExperiment(BaseExperiment):
+class BaseCameraExperiment(BaseExperiment, ABC):
     """
     This experiment takes a series of images with a camera.
     - Changes some experimental configuration.
@@ -164,13 +63,14 @@ class CameraExperiment(BaseExperiment):
 
     Notes
     -----
+    If you want to have a simple camera experiment with a single configuration, you can use the `SimpleCameraExperiment` class instead.
+
     When inheriting from this class, the following methods should be implemented:
     - prepare_config: to set the experimental configuration for each measurement.
     - get_config_names: to return the human-readable names of the configurations.
 
     In addition, your __init__ method should call `check_N_frames`, to check the n_frames.
     """
-
     pdg: BncPdgCmds
     n_frames: list[int]
 
@@ -218,12 +118,6 @@ class CameraExperiment(BaseExperiment):
             Base experiment metadata.
         """
         self.n_iter = n_iter
-        if self.n_iter > 1:
-            msg = (
-                f"`n_iter` bigger than 1 can cause problems for the standard analysis."
-            )
-            warnings.warn(msg)
-
         self.n_frames = n_frames
         self.t_exposure = t_exposure
         self.camera_delay_optimum = camera_delay_optimum
@@ -233,9 +127,6 @@ class CameraExperiment(BaseExperiment):
         self.background_every = BackgroundConfiguration(background_every)
         self.camera_reset_time = camera_reset_time
         self.camera_pulse_width = camera_pulse_width
-
-        if type(self) is CameraExperiment:
-            self.check_N_frames(1, "")
         super().__init__(**kwargs)
 
     def check_N_frames(self, expected_length: int, config_explanation: str) -> None:
@@ -264,7 +155,6 @@ class CameraExperiment(BaseExperiment):
 
     def prepare_experiment(self, cmds: Script) -> None:
         """Prepare the experiment. Inherit this method to add more commands."""
-        pass
 
     def get_camera_delay(self, config: int, version: int | str) -> float:
         """Get the camera delay for a specific configuration, frame, and version."""
@@ -328,14 +218,13 @@ class CameraExperiment(BaseExperiment):
         # Trigger the camera
         self.pdg.arm()
 
-        # Wait for the camera to finish
-        cmds.pause(self.t_exposure * 1e3)
+        # Wait for the camera to finish, add one pulse, since first pulse is blocked
+        cmds.pause((self.t_exposure + 1/30) * 1e3)
         cmds.comment("# Wait for the camera to reset")
         cmds.pause(self.camera_reset_time * 1e3)
 
     def shutdown_experiment(self) -> None:
         """Shutdown the experiment. Inherit this method to add more commands."""
-        pass
 
     def make_labctl_script(self) -> Script:
         """Generate a complete acquisition script for this experiment.
@@ -351,7 +240,7 @@ class CameraExperiment(BaseExperiment):
         # for device in cmds.devices:
         #     device.verify_device()
 
-        self.pdg = cast(BncPdgCmds, list(cmds.devices.keys())[0])
+        self.pdg = cast(BncPdgCmds, next(iter(cmds.devices.keys())))
 
         ###################
         #    PARAMETERS   #
@@ -386,6 +275,7 @@ class CameraExperiment(BaseExperiment):
         # self.pdg.output("G", "ADJ", voltage=4)  # Output 4V
         self.pdg.polarity("G", "NORM")  # Normal polarity
         self.pdg.channel_mode("G", "SING")
+        cmds.pause(100)
 
         # Setting for camera channel
         self.pdg.channel_gate(self.camera_channel, "LOW")
@@ -416,17 +306,15 @@ class CameraExperiment(BaseExperiment):
         # Write initialization file
         # cmds.print()
         n_total = sum(
-            [
-                self.background_every.measurement_count(n) * self.n_iter
+            self.background_every.measurement_count(n) * self.n_iter
                 for n in self.n_frames
-            ]
         )
         comments = [
             f"Total wait: {cmds.total_wait/1e3/60:.1f}min",
-            f"NB: Put the PDG in burst mode",
-            f"Kinetic acquisition settings:",
+            "NB: Put the PDG in burst mode",
+            "Kinetic acquisition settings:",
             f"\tExposure time:\t\t{self.t_exposure:.3f}s",
-            f"\tAccumulation count:\t1",
+            "\tAccumulation count:\t1",
             f"\tFrame count:\t\t{n_total}",
         ]
 
@@ -508,16 +396,16 @@ class CameraExperiment(BaseExperiment):
         info_obj = {
             "indices": self.get_config_indices(),
             "indices_full": self.get_config_indices_full(),
-            "configs": self.get_config_index_dict(),
+            "configs": conf_idx_dict,
             # Backwards compatibility
-            **dict(
-                (f"{config}_sig", conf_idx_dict[config]["foreground"])
+            **{
+                f"{config}_sig": conf_idx_dict[config]["foreground"]
                 for config in conf_idx_dict
-            ),
-            **dict(
-                (f"{config}_bg", conf_idx_dict[config]["background"])
+            },
+            **{
+                f"{config}_bg": conf_idx_dict[config]["background"]
                 for config in conf_idx_dict
-            ),
+            },
             "n_iter": self.n_iter,
             "n_frames": self.n_frames,
             "t_exposure": self.t_exposure,
@@ -525,134 +413,8 @@ class CameraExperiment(BaseExperiment):
             "N_frames": self.n_frames,
             "T_exposure": self.t_exposure,
             "background_every": self.background_every.value,
+            "camera_delay_optimum": self.camera_delay_optimum,
+            "camera_delay_background": self.camera_delay_background,
             **super().make_postprocessing_info(),
         }
         return info_obj
-
-    @staticmethod
-    def postprocess(
-        f_data,
-        f_pickle=None,
-        info=None,
-    ) -> tuple[dict[str, tuple[np.ndarray, np.ndarray, np.ndarray]], dict]:
-        """Load and postprocess corrected spectra for each configuration.
-
-        Parameters
-        ----------
-        f_data : path-like
-            Path to the acquired data file.
-        f_pickle : path-like, optional
-            Path to the metadata pickle. If omitted, derived from ``f_data``.
-        info : dict, optional
-            Preloaded metadata dictionary.
-
-        Returns
-        -------
-        dict[str, tuple[np.ndarray, np.ndarray, np.ndarray]]
-            Mapping from config name to raw signal, raw background, and
-            corrected signal.
-        """
-        import pickle as pkl
-        from toddler.data.spectrum import Spectrum
-
-        f_data = Path(f_data)
-
-        if f_pickle is None:
-            f_pickle = f_data.with_suffix(".pkl")
-
-        # Load pickle file
-        if info is None:
-            info = pkl.load(open(f_pickle, "rb"))
-
-        def get_data(data, info, config):
-            # Get the keys for the signal and background indices
-            sig_key = f"{config}_sig"
-            bg_key = f"{config}_bg"
-
-            if not sig_key in info:
-                print(f"Warning: No indices found for config {config}, skipping.")
-                return None, None
-
-            # Get the indices for the signal and background
-            sig_ind = info[sig_key]
-            bg_ind = info[bg_key]
-
-            # Get the data for the signal and background
-            sig_data = data[:, :, sig_ind]
-            bg_data = data[:, :, bg_ind]
-
-            sig_data_avg = sig_data.c.median(axis=2)
-            bg_data_avg = bg_data.c.median(axis=2)
-            sig_data_processed = (
-                sig_data_avg if len(bg_ind) == 0 else sig_data_avg - bg_data_avg
-            )
-
-            return sig_data, bg_data, sig_data_processed
-
-        # Load sif file
-        data = Spectrum.from_file(f_data, new_axes=True)
-        data._axis_lambda = 0
-
-        # Postprocess all configs
-        results = {}
-        for i, config in enumerate(info["configs"]):
-            results[config] = get_data(data, info, config)
-
-        return results, info
-
-    def make_postprocessing_script(self) -> str:
-        """Return a legacy postprocessing script template.
-
-        Returns
-        -------
-        str
-            Python source code template for manual postprocessing.
-        """
-        # TODO: Currently, this will not work! Maybe remove and bundle in package
-        code = """
-# IMPORTANT: THIS IS NOT CORRECT CODE FOR CURRENT VERSION!!
-import pickle
-import sif_parser
-import numpy as np
-import matplotlib.pyplot as plt
-
-f_pickle = ""  # Replace with path of the ..._idx.pkl file
-f_data = ""  # Replace with path of the .sif file
-
-# Load pickle file
-info = pickle.load(open(f_pickle, "rb"))
-print(info.keys())
-print(info["configs"])
-
-# Load sif file
-print("Loading image data...")
-data, _ = sif_parser.np_open(f_data)
-
-
-def get_data(data, info, config):
-    # Get the keys for the signal and background indices
-    sig_key = f"{config}_sig"
-    bg_key = f"{config}_bg"
-
-    if not sig_key in info:
-        return None, None
-
-    # Get the indices for the signal and background
-    sig_ind = info[sig_key]
-    bg_ind = info[bg_key]
-
-    # Get the data for the signal and background
-    sig_data = data[sig_ind[0], :, :]
-    bg_data = data[bg_ind[0], :, :]
-
-    sig_data_avg = np.median(sig_data, axis=0)
-    bg_data_avg = np.median(bg_data, axis=0)
-
-    return sig_data_avg, bg_data_avg, sig_data_avg - bg_data_avg\n\n
-# Load the data of all config
-# (sig, bg, sig-bg)\n"""
-        for i, config in enumerate(self.get_config_names()):
-            if len(self.n_frames) <= i or self.n_frames[i] <= 0:
-                continue
-            code += f"sig_{config}, bg_{config}, sig_{config}_corr = get_data(data, info, {i})\n"
-        return code
