@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import time
-from labctl.devices.base import DeviceBase
+
 from labctl.script.base import ScriptBase
+from labctl.script.device_base import DeviceBase
 
 
 class ScriptInfo(ScriptBase):
@@ -32,7 +33,7 @@ class ScriptInfo(ScriptBase):
 
     def header_info(self) -> None:
         """Append script metadata comments to the command stream."""
-        self.comment(f"Configuration file for lab automation")
+        self.comment("Configuration file for lab automation")
         if self.title is not None:
             self.comment(f"  Title:  {self.title}")
         self.comment(f"  Date:   {self.date}")
@@ -44,7 +45,7 @@ class DeviceCommands(ScriptBase):
     """Device/channel routing helper for script command emission."""
 
     current_channel: int = -1
-    devices: dict[DeviceBase, int] = {}
+    devices: dict[DeviceBase, int] = {}  # noqa: RUF012
 
     def register_device(self, device: DeviceBase, channel: int | None = None) -> int:
         """Register a device to a serial-switch channel.
@@ -64,15 +65,15 @@ class DeviceCommands(ScriptBase):
         if channel is None:
             unoccupied_channels = set(range(1, 4)) - set(self.devices.values())
             if len(unoccupied_channels) == 0:
-                raise Exception("No unoccupied channels available")
+                raise ValueError("No unoccupied channels available")
             channel = min(unoccupied_channels)
 
         if device in self.devices:
-            raise Exception(
+            raise ValueError(
                 f"Device {device} is already registered on channel {self.devices[device]}"
             )
         if channel in self.devices.values():
-            raise Exception(
+            raise ValueError(
                 f"Channel {channel} is already occupied by device {self.get_device_by_channel(channel)}"
             )
 
@@ -97,7 +98,7 @@ class DeviceCommands(ScriptBase):
             Channel number assigned to ``device``.
         """
         if device not in self.devices:
-            raise Exception(f"Device {device} is not registered")
+            raise ValueError(f"Device {device} is not registered")
         return self.devices[device]
 
     def get_device_by_channel(self, channel: int) -> DeviceBase:
@@ -116,7 +117,7 @@ class DeviceCommands(ScriptBase):
         for device, ch in self.devices.items():
             if ch == channel:
                 return device
-        raise Exception(f"No device registered on channel {channel}")
+        raise ValueError(f"No device registered on channel {channel}")
 
     def is_registered(self, device: DeviceBase) -> bool:
         """Check whether a device is registered.
@@ -151,7 +152,7 @@ class DeviceCommands(ScriptBase):
                 self.append(f"#SELSER {channel}")
                 self.current_channel = channel
         else:
-            raise Exception(f"Invalid channel type: {type(channel)}")
+            raise TypeError(f"Invalid channel type: {type(channel)}")
 
     def test(self, device, test_command, result, allow_overflow: bool = False):
         """

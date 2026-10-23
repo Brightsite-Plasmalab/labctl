@@ -1,6 +1,8 @@
 """Combined translation/polarization experiment implementation."""
 
-from typing_extensions import Unpack, List
+
+from typing_extensions import Unpack
+
 from labctl.experiments.polarisation import (
     PolarisationFilterExperiment,
     PolarisationFilterExperimentKwargs,

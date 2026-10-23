@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from labctl.devices.base import DeviceBase
 from labctl.script.base import ScriptBase
+from labctl.script.device_base import DeviceBase
 
 
 class PiTranslationStage(DeviceBase):

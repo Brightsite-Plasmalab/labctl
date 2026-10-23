@@ -7,33 +7,32 @@ translation-stage positions.
 from typing_extensions import Unpack
 
 from labctl.devices import PiTranslationStage
+from labctl.experiments.camera import BaseCameraExperiment, BaseCameraExperimentKwargs
 from labctl.script import Script
-from labctl.experiments.camera import CameraExperiment, CameraExperimentKwargs
 
 
-class TranslationStageExperimentKwargs(CameraExperimentKwargs):
+class TranslationStageExperimentKwargs(BaseCameraExperimentKwargs):
     """Keyword arguments for :class:`TranslationStageExperiment`."""
-
     x: list[float]
 
 
-class TranslationStageExperiment(CameraExperiment):
+class TranslationStageExperiment(BaseCameraExperiment):
     """Acquire camera data for a sweep of translation-stage positions."""
 
     translationstage: PiTranslationStage
 
     def __init__(
         self,
-        x: list[float] | None = None,
-        **kwargs: Unpack[CameraExperimentKwargs],
+        x: list[float],
+        **kwargs: Unpack[BaseCameraExperimentKwargs],
     ) -> None:
         """Initialize a translation-stage sweep experiment.
 
         Parameters
         ----------
-        x : list[float] | None, optional
+        x : list[float]
             Translation positions in millimeters. Must be provided.
-        **kwargs : Unpack[CameraExperimentKwargs]
+        **kwargs : Unpack[BaseCameraExperimentKwargs]
             Base camera experiment configuration.
 
         Raises
@@ -41,9 +40,6 @@ class TranslationStageExperiment(CameraExperiment):
         ValueError
             If ``x`` is not provided.
         """
-        if x is None:
-            msg = "x must be provided as a keyword argument"
-            raise ValueError(msg)
         self.x = x
         super().__init__(**kwargs)
         if type(self) == TranslationStageExperiment:

@@ -1,11 +1,12 @@
 """Template experiment base for custom camera-based experiments."""
 
 from abc import abstractmethod
+
+from labctl.experiments.camera import BaseCameraExperiment
 from labctl.script import Script
-from labctl.experiments.camera import CameraExperiment
 
 
-class TemplateExperiment(CameraExperiment):
+class TemplateExperiment(BaseCameraExperiment):
     """Minimal scaffold for new camera experiment implementations."""
 
     def __init__(
@@ -25,7 +26,6 @@ class TemplateExperiment(CameraExperiment):
 
     def prepare_experiment(self, cmds: Script) -> None:
         """Prepare the experiment. Inherit this method to add more commands."""
-        pass
 
     @abstractmethod
     def prepare_config(self, cmds: Script, i: int) -> None:
@@ -38,7 +38,6 @@ class TemplateExperiment(CameraExperiment):
         i : int
             Configuration index.
         """
-        pass
 
     # TODO change to new get_camera_delay_background and get_camera_delay_foreground
     def get_camera_delay_foreground(self, config: int) -> float:
@@ -54,7 +53,6 @@ class TemplateExperiment(CameraExperiment):
         float
             Camera delay in seconds.
         """
-        pass
 
     def get_camera_delay_background(self, config: int) -> float:
         """Return background camera delay for a configuration.
@@ -69,8 +67,6 @@ class TemplateExperiment(CameraExperiment):
         float
             Camera delay in seconds.
         """
-        pass
 
     def shutdown_experiment(self) -> None:
         """Shutdown the experiment. Inherit this method to add more commands."""
-        pass

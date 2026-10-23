@@ -58,6 +58,6 @@ class DeviceBase:
         Verifies that the device is properly registered with the parent command collection.
         """
         if not self.parent.is_registered(self):
-            raise Exception(
+            raise ValueError(
                 f"Device {self} is not registered with the parent command collection"
             )

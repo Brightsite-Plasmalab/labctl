@@ -1,7 +1,7 @@
 """Meta command extensions for script control flow and comments."""
+from typing import Self
 
 from labctl.script.base import ScriptBase
-from typing_extensions import Self
 
 
 class MetaCommands(ScriptBase):

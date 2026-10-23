@@ -4,16 +4,19 @@ This module defines a convenience experiment for vertical/horizontal
 polarization measurements using two fixed rotation angles.
 """
 
-from typing import cast
+from typing import NotRequired, cast
 
-from typing_extensions import NotRequired, Unpack
+from typing_extensions import Unpack
+
 from labctl.devices import ThorlabsRotationStageCmds
-from labctl.experiments import PolarisationFilterSweepExperiment
-from labctl.experiments.polarisation_sweep import PolarisationFilterSweepExperimentKwargs
-from labctl.experiments.camera import CameraExperimentKwargs
+from labctl.experiments.camera import BaseCameraExperimentKwargs
+from labctl.experiments.polarisation_sweep import (
+    PolarisationFilterSweepExperiment,
+    PolarisationFilterSweepExperimentKwargs,
+)
 
 
-class PolarisationFilterExperimentKwargs(CameraExperimentKwargs):
+class PolarisationFilterExperimentKwargs(BaseCameraExperimentKwargs):
     """Keyword arguments for :class:`PolarisationFilterExperiment`."""
 
     alpha_ver: float
@@ -31,7 +34,7 @@ class PolarisationFilterExperiment(PolarisationFilterSweepExperiment):
         self,
         alpha_ver: float,
         alpha_hor: float | None = None,
-        **kwargs: Unpack[CameraExperimentKwargs],
+        **kwargs: Unpack[BaseCameraExperimentKwargs],
     ) -> None:
         """Initialize a two-angle polarization experiment.
 
@@ -41,7 +44,7 @@ class PolarisationFilterExperiment(PolarisationFilterSweepExperiment):
             Vertical polarization angle.
         alpha_hor : float | None, optional
             Horizontal polarization angle. Defaults to ``alpha_ver + 90``.
-        **kwargs : Unpack[CameraExperimentKwargs]
+        **kwargs : Unpack[BaseCameraExperimentKwargs]
             Base camera experiment settings.
 
         Raises
@@ -54,7 +57,7 @@ class PolarisationFilterExperiment(PolarisationFilterSweepExperiment):
             raise ValueError(msg)
         self.alpha_ver = alpha_ver
         if alpha_hor is None:
-            alpha_hor = alpha_ver + 90.0
+            alpha_hor = (alpha_ver + 90.0) % 360
         self.alpha_hor = alpha_hor
 
         kwargs = cast(PolarisationFilterSweepExperimentKwargs, kwargs)
@@ -85,7 +88,7 @@ class PolarisationFilterExperiment(PolarisationFilterSweepExperiment):
             Configuration index.
         """
         names = ["vertical", "horizontal"]
-        cmds.append(f"# Selecting {names[i]} rotation")
+        cmds.append(f"# Selecting {names[i % 2]} rotation")
         super().prepare_config(cmds, i)
 
     def make_postprocessing_info(self) -> dict[str, object]:

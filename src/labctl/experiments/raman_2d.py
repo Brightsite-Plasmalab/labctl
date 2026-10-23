@@ -1,30 +1,31 @@
 """Raman 2D filter-sweep experiment definitions."""
 
 from typing_extensions import Unpack
+
 from labctl.devices import ThorlabsStageCmds
-from labctl.experiments.camera import CameraExperiment, CameraExperimentKwargs
+from labctl.experiments.camera import BaseCameraExperiment, BaseCameraExperimentKwargs
 
 
-class Raman2DExperimentKwargs(CameraExperimentKwargs):
+class Raman2DExperimentKwargs(BaseCameraExperimentKwargs):
     """Keyword arguments for :class:`Raman2DExperiment`."""
-
     filters: list[str]
+    """The names of the filters at that index in the filter stage. """
 
 
-class Raman2DExperiment(CameraExperiment):
+class Raman2DExperiment(BaseCameraExperiment):
     """Acquire camera data while stepping through a filter wheel sequence."""
 
     filterstage: ThorlabsStageCmds
     filters: list[str]
 
-    def __init__(self, filters: list[str], **kwargs: Unpack[CameraExperimentKwargs]) -> None:
+    def __init__(self, filters: list[str], **kwargs: Unpack[BaseCameraExperimentKwargs]) -> None:
         """Initialize a Raman filter sweep.
 
         Parameters
         ----------
         filters : list[str]
             Ordered filter names used as experiment configurations.
-        **kwargs : Unpack[CameraExperimentKwargs]
+        **kwargs : Unpack[BaseCameraExperimentKwargs]
             Base camera experiment configuration.
         """
         self.filters = filters
@@ -102,4 +103,4 @@ class Raman2DExperiment(CameraExperiment):
         str | None
             Script source string when implemented; currently ``None``.
         """
-        pass  # TODO
+        # TODO

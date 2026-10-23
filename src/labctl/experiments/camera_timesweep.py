@@ -4,24 +4,24 @@ This module implements a camera-based experiment that sweeps foreground camera
 delay offsets and stores timing metadata for postprocessing.
 """
 
-from typing_extensions import override, Unpack
 import numpy as np
+from typing_extensions import Unpack, override
 
-from labctl.experiments.camera import CameraExperiment, CameraExperimentKwargs
+from labctl.experiments.camera import BaseCameraExperiment, BaseCameraExperimentKwargs
 
 
-class CameraTimesweepExperimentKwargs(CameraExperimentKwargs):
+class CameraTimesweepExperimentKwargs(BaseCameraExperimentKwargs):
     """Keyword arguments for :class:`CameraTimesweepExperiment`."""
     delta_t: list[float] | np.ndarray
 
 
-class CameraTimesweepExperiment(CameraExperiment):
+class CameraTimesweepExperiment(BaseCameraExperiment):
     """Acquire camera frames over a sweep of trigger delays."""
 
     def __init__(
         self,
         delta_t: list[float] | np.ndarray,
-        **kwargs: Unpack[CameraExperimentKwargs],
+        **kwargs: Unpack[BaseCameraExperimentKwargs],
     ) -> None:
         """Initialize the experiment with delay offsets.
 
@@ -29,12 +29,12 @@ class CameraTimesweepExperiment(CameraExperiment):
         ----------
         delta_t : list[float] | np.ndarray
             Delay offsets relative to ``camera_delay_optimum``.
-        **kwargs : Unpack[CameraExperimentKwargs]
+        **kwargs : Unpack[BaseCameraExperimentKwargs]
             Base camera experiment configuration.
         """
         self.delta_t = delta_t
         super().__init__(**kwargs)
-        expl = f" The number of configurations is the number of camera delays."
+        expl = " The number of configurations is the number of camera delays."
         if type(self) is CameraTimesweepExperiment:
             self.check_N_frames(len(self.delta_t), expl)
 
@@ -50,7 +50,7 @@ class CameraTimesweepExperiment(CameraExperiment):
         info = super().make_postprocessing_info()
         info.update(
             {
-                "variable": "t",
+                "variable": "delta_t",
                 "delta_t": self.delta_t,
                 "t0": self.camera_delay_optimum,
                 "t": [ti + self.camera_delay_optimum for ti in self.delta_t],
@@ -81,7 +81,6 @@ class CameraTimesweepExperiment(CameraExperiment):
         i : int
             Configuration index.
         """
-        pass
 
     @override
     def get_camera_delay_foreground(self, config: int) -> float:

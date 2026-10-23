@@ -1,10 +1,11 @@
 """Simple single-configuration camera experiment."""
 
-from labctl.experiments.camera import CameraExperiment
 from typing_extensions import override
 
+from labctl.experiments.camera import BaseCameraExperiment
 
-class SimpleCameraExperiment(CameraExperiment):
+
+class SimpleCameraExperiment(BaseCameraExperiment):
     """Camera experiment with exactly one no-op configuration."""
 
     @override
@@ -31,7 +32,6 @@ class SimpleCameraExperiment(CameraExperiment):
             Configuration index.
         """
         # No configuration to prepare
-        pass
 
     @override
     def make_postprocessing_info(self) -> dict[str, object]:

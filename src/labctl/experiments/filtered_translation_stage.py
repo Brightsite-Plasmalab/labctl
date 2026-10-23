@@ -1,7 +1,9 @@
-from typing_extensions import Unpack, List
+
+from typing_extensions import Unpack
+
 from labctl.experiments.raman_2d import (
-    Raman2DExperimentKwargs,
     Raman2DExperiment,
+    Raman2DExperimentKwargs,
 )
 from labctl.experiments.translation_stage import (
     TranslationStageExperiment,
@@ -46,7 +48,7 @@ class FilteredTranslationStageExperiment(
 
         return config_translation, config_filter
 
-    def get_config_names(self) -> List[str]:
+    def get_config_names(self) -> list[str]:
         config_names_translation = TranslationStageExperiment.get_config_names(self)
         config_names_filters = Raman2DExperiment.get_config_names(self)
 

@@ -1,27 +1,26 @@
 """Polarisation sweep experiment definitions.
 
 This module provides a camera-based experiment that sweeps a rotation stage
-over a list of polarization angles.
+over a list of polarisation angles.
 """
 
-from typing import Collection
-
-from typing_extensions import Unpack
+from collections.abc import Collection
 
 import numpy as np
+from typing_extensions import Unpack
 
 from labctl.devices import ThorlabsRotationStageCmds
+from labctl.experiments.camera import BaseCameraExperiment, BaseCameraExperimentKwargs
 from labctl.script import Script
-from labctl.experiments.camera import CameraExperiment, CameraExperimentKwargs
 
 
-class PolarisationFilterSweepExperimentKwargs(CameraExperimentKwargs):
+class PolarisationFilterSweepExperimentKwargs(BaseCameraExperimentKwargs):
     """Keyword arguments for :class:`PolarisationFilterSweepExperiment`."""
 
     alpha: Collection[float] | np.ndarray[tuple[int], np.dtype[np.floating | np.integer]]
 
 
-class PolarisationFilterSweepExperiment(CameraExperiment):
+class PolarisationFilterSweepExperiment(BaseCameraExperiment):
     """Camera experiment that acquires data at multiple polarization angles."""
 
     rotationstage: ThorlabsRotationStageCmds
@@ -30,7 +29,7 @@ class PolarisationFilterSweepExperiment(CameraExperiment):
     def __init__(
             self,
             alpha: Collection[float] | np.ndarray[tuple[int], np.dtype[np.floating | np.integer]],
-            **kwargs: Unpack[CameraExperimentKwargs]
+            **kwargs: Unpack[BaseCameraExperimentKwargs]
     ) -> None:
         """Initialize a polarization-angle sweep.
 
@@ -38,7 +37,7 @@ class PolarisationFilterSweepExperiment(CameraExperiment):
         ----------
         alpha : Collection[float] | np.ndarray
             Polarization angles in degrees.
-        **kwargs : Unpack[CameraExperimentKwargs]
+        **kwargs : Unpack[BaseCameraExperimentKwargs]
             Base camera experiment settings.
         """
         self.alpha = np.array(alpha)
@@ -108,8 +107,9 @@ class PolarisationFilterSweepExperiment(CameraExperiment):
         info = super().make_postprocessing_info()
         info.update(
             {
-                "variable": "polarization_angle",
+                "variable": "polarisation_angle",
                 "polarization_angle": self.alpha,
+                "polarisation_angle": self.alpha,
             }
         )
         return info

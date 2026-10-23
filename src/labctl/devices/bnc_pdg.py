@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-from typing_extensions import Union
-from labctl.devices.base import DeviceBase
+from labctl.script.device_base import DeviceBase
 
 
 class BncPdgCmds(DeviceBase):
@@ -37,7 +36,7 @@ class BncPdgCmds(DeviceBase):
             raise ValueError(f"Invalid channel {channel}, should be in [1, 2, ..., 8]")
 
     @staticmethod
-    def verify_channel(channel: Union[str, int]) -> int:
+    def verify_channel(channel: str | int) -> int:
         """Validate channel identifier and normalize to integer form."""
         if isinstance(channel, str):
             return BncPdgCmds.get_channel_number(channel)
@@ -49,14 +48,14 @@ class BncPdgCmds(DeviceBase):
                     f"Invalid channel {channel}, should be in [1, 2, ..., 8]"
                 )
         else:
-            raise ValueError(f"Expected int or str, got {type(channel).__name__}")
+            raise TypeError(f"Expected int or str, got {type(channel).__name__}")
 
-    def delay(self, channel: Union[str, int], delay: float) -> None:
+    def delay(self, channel: str | int, delay: float) -> None:
         """Set channel delay in seconds."""
         channel = self.verify_channel(channel)
         self.append(f":PULS{channel:d}:DELAY {delay:.10f}")
 
-    def pulsewidth(self, channel: Union[str, int], t_pulse: float) -> None:
+    def pulsewidth(self, channel: str | int, t_pulse: float) -> None:
         """Set channel pulse width in seconds."""
         channel = self.verify_channel(channel)
         self.append(f":PULS{channel:d}:WIDT {t_pulse:.10f}")
@@ -67,12 +66,12 @@ class BncPdgCmds(DeviceBase):
         self.parent.pause(50)
         self.append("*ARM")
 
-    def burstcount(self, channel: Union[str, int], count: int) -> None:
+    def burstcount(self, channel: str | int, count: int) -> None:
         """Set burst count for a channel."""
         channel = self.verify_channel(channel)
         self.append(f":PULS{channel:d}:BCO {count:.0f}")
 
-    def enable(self, channel: Union[str, int], enable: bool) -> None:
+    def enable(self, channel: str | int, enable: bool) -> None:
         """Enable or disable a channel output."""
         channel = self.verify_channel(channel)
         if enable:
@@ -80,7 +79,7 @@ class BncPdgCmds(DeviceBase):
         else:
             self.append(f":PULS{channel:d}:STAT OFF")
 
-    def polarity(self, channel: Union[str, int], polarity: str) -> None:
+    def polarity(self, channel: str | int, polarity: str) -> None:
         """Set output polarity mode."""
         channel = self.verify_channel(channel)
         if polarity in ["NORM", "INV", "COMP"]:
@@ -90,7 +89,7 @@ class BncPdgCmds(DeviceBase):
                 f"Invalid polarity {polarity}, should be in [NORM, INV, COMP]"
             )
 
-    def output(self, channel: Union[str, int], mode: str, voltage: float = 0) -> None:
+    def output(self, channel: str | int, mode: str, voltage: float = 0) -> None:
         """Configure output mode and optional amplitude."""
         channel = self.verify_channel(channel)
         if mode == "TTL":
@@ -99,7 +98,7 @@ class BncPdgCmds(DeviceBase):
             self.append(f":PULS{channel:d}:OUTP:MOD ADJ")
             self.append(f":PULS{channel:d}:OUTP:AMPL {voltage:.1f}")
 
-    def channel_mode(self, channel: Union[str, int], mode: str) -> None:
+    def channel_mode(self, channel: str | int, mode: str) -> None:
         """Set channel operating mode."""
         channel = self.verify_channel(channel)
         if mode in ["NORM", "SING", "BURS", "DCYC"]:
@@ -109,7 +108,7 @@ class BncPdgCmds(DeviceBase):
                 f"Invalid mode {mode}, should be in [NORM, SING, BURS, DCYC]"
             )
 
-    def channel_gate(self, channel: Union[str, int], gate: str) -> None:
+    def channel_gate(self, channel: str | int, gate: str) -> None:
         """Configure channel gating behavior."""
         channel = self.verify_channel(channel)
         if gate in ["DIS", "LOW", "HIGH"]:
@@ -117,7 +116,7 @@ class BncPdgCmds(DeviceBase):
         else:
             raise ValueError(f"Invalid gate {gate}, should be in [DIS, LOW, HIGH]")
 
-    def sync(self, channel: Union[str, int], ref: Union[str, int]) -> None:
+    def sync(self, channel: str | int, ref: str | int) -> None:
         """Set channel synchronization reference."""
         channel = self.verify_channel(channel)
         if ref == "T0":
