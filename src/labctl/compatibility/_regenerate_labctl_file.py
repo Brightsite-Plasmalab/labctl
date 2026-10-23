@@ -1,15 +1,14 @@
 from __future__ import annotations
 
-from abc import ABC
-from os import PathLike
-import pathlib
 import inspect
+import pathlib
 import pickle
-from typing import TypedDict, get_type_hints, get_args, get_origin
+from abc import ABC
+from dataclasses import dataclass
+from os import PathLike
+from typing import Any, NotRequired, TypedDict, get_args, get_origin, get_type_hints
 
-from typing_extensions import NotRequired
-
-import labctl.experiments as experiments
+from labctl import experiments
 
 _classes_by_name = {
     name: obj
@@ -80,7 +79,7 @@ def _get_unpack_typeddict(sig: inspect.Signature) -> type[TypedDict] | None:
     return None
 
 
-def find_kwargs_typeddict_for_class(cls: type) -> type[TypedDict] | None:
+def _find_kwargs_typeddict_for_class(cls: type) -> type[TypedDict] | None:
     """
     Look for a TypedDict named '<ClassName>Kwargs' in labctl.experiments.
     """
@@ -91,7 +90,7 @@ def find_kwargs_typeddict_for_class(cls: type) -> type[TypedDict] | None:
     return None
 
 
-def extract_argument_names_for_experiment(
+def _extract_argument_names_for_experiment(
     cls: type,
     kwargs_typed_dict: type[TypedDict] | None = None,
 ) -> dict[str, list[str]]:
@@ -142,7 +141,7 @@ def extract_argument_names_for_experiment(
     }
 
 
-def extract_all_experiment_arguments() -> dict[str, dict[str, list[str]]]:
+def _extract_all_experiment_arguments() -> dict[str, dict[str, list[str]]]:
     """
     Extract argument names for all experiment classes in labctl.experiments.
     """
@@ -154,17 +153,25 @@ def extract_all_experiment_arguments() -> dict[str, dict[str, list[str]]]:
         if not issubclass(cls, ABC):
             continue
 
-        kwargs_td = find_kwargs_typeddict_for_class(cls)
-        out[name] = extract_argument_names_for_experiment(cls, kwargs_td)
+        kwargs_td = _find_kwargs_typeddict_for_class(cls)
+        out[name] = _extract_argument_names_for_experiment(cls, kwargs_td)
 
     return out
 
-_classes_arguments = extract_all_experiment_arguments()
+_classes_arguments = _extract_all_experiment_arguments()
+
+
+@dataclass
+class ValueMap:
+    value: Any
 
 
 def regenerate_file(pickle_loc: str | PathLike, loc_out: str | PathLike | None = None, **extra_info) -> str:
     """
     Regenerate labctl file with the new version based on the pickle file
+
+    if a value got a different name in the new version, you can use a :class:`ValueMap` as a kwarg to map the old name
+    (value in the :class:`ValueMap`) to the new name (kwarg name).
 
     Returns
     -------
@@ -176,14 +183,24 @@ def regenerate_file(pickle_loc: str | PathLike, loc_out: str | PathLike | None =
 
     def find_value(name, *, required: bool):
         if name not in info:
+            cap_name = name[0].upper() + name[1:]
+            if cap_name in info:
+                return info[cap_name]
+
             if name not in extra_info:
                 if required:
-                    msg = f"{name} not found in info nor extra_info."
+                    info_keys = tuple(info.keys())
+                    extra_keys = tuple(extra_info.keys())
+
+                    msg = f"{name} not found in info nor extra_info. pkl info keys: {info_keys}, extra_info keys: {extra_keys}."
                     raise ValueError(msg)
                 else:
                     return None
             else:
-                return extra_info[name]
+                val = extra_info[name]
+                if isinstance(val, ValueMap):
+                    return info[val.value]
+                return val
         else:
             return info[name]
 
@@ -202,11 +219,18 @@ def regenerate_file(pickle_loc: str | PathLike, loc_out: str | PathLike | None =
         "file_name": "",
     }
 
+    errors = []
     for arg in required_arguments:
         if arg in defaults and arg not in extra_info:
             call_kwargs[arg] = defaults[arg]
         else:
-            call_kwargs[arg] = find_value(arg, required=True)
+            try:
+                call_kwargs[arg] = find_value(arg, required=True)
+            except ValueError as e:
+                errors.append(e)
+    if len(errors) > 0:
+        raise BaseExceptionGroup("Did not find all needed parameters", errors)
+
     for arg in not_required_arguments:
         value = find_value(arg, required=False)
         if value is not None:
