@@ -1,49 +1,61 @@
 """Convenience plotting helper for camera-delay timesweep experiments."""
-import pickle
-
 import numpy as np
-import matplotlib.pyplot as plt
 
-from labctl.analysis.get_data import get_data
+from labctl._type_hints import _file_path_or_collection_type
+from labctl.analysis import CombinedMeasurement
+from labctl.analysis.plotter import plot_vs_variable
+from labctl.analysis.read_data import GetDataGluedKwargs
 
-def analyse_camera_timesweep(
-        sif_loc,
-        pickle_loc,
-        *,
-        indexes=None,
+
+def analyse_camera_timesweep_intensity(
+        sif: CombinedMeasurement | _file_path_or_collection_type,
+        pickle_loc: _file_path_or_collection_type | None = None,
+        /, *,
+        get_data_glued_kwargs: GetDataGluedKwargs | None = None,
+        plot_vs_variable_kwargs: dict | None = None,
+        plot_kwargs: dict | None = None
 ) -> None:
-    """Plot camera-timesweep intensity versus configured delay.
+    """
+    Plot camera-timesweep intensity versus configured delay.
 
     Parameters
     ----------
-    sif_loc : str | os.PathLike[str]
-        Path to the acquired SIF file.
-    pickle_loc : str | os.PathLike[str]
-        Path to the experiment metadata pickle.
-    indexes : tuple[int, int] | None, optional
-        Optional width slice applied during loading.
+    sif : CombinedMeasurement | _file_path_or_collection_type
+        The measurement data, or path to the sif file.
+    pickle_loc: _file_path_or_collection_type | None = None
+        Path to pickle file, must be given if sif is a _file_path_or_collection_type.
+    get_data_glued_kwargs: GetDataGluedKwargs | None
+        Used to process the data if sif is a path. Passed to :func:`labctl.analysis.get_data_glued`.
     """
-    # Load pickle file
-    with open(pickle_loc, "rb") as pkl_file:
-        info = pickle.load(pkl_file)
+    plot_kwargs = plot_kwargs or {}
+    plot_vs_variable_kwargs = plot_vs_variable_kwargs or {}
 
-    if info['experiment_type'] != 'CameraTimesweepExperiment':
-        msg = f"Function only works for 'CameraTimesweepExperiment' not {info['experiment_type']}."
-        raise ValueError(msg)
+    default_kwargs = {
+        "show": True,
+        "x_label": "Camera delay (s)",
+    }
+    default_kwargs.update(**plot_vs_variable_kwargs)
+    default_plot_kwargs = {
+        "marker": 'o',
+        "color": "k",
+        "alpha": 0.5,
+        "linestyle": "none"
+    }
+    default_plot_kwargs.update(**plot_kwargs)
 
-    data = get_data(sif_loc, pickle_loc, width_indexes=indexes)[0]
-    data_mean = np.mean(data, axis = (-2, -1))
-    data_flat = data_mean.flatten()
-    time_values = info["t"]
-    repeated_time_values = np.repeat(time_values, info["n_frames"][0])
+    def print_max(x, y):
+        x_unique = np.unique(x)
+        avg_values = [np.median(y[unique_val == x]) for unique_val in x_unique]
+        idx = avg_values.index(max(avg_values))
+        print(f"Max value at {x_unique[idx]:.2e}s")
+        return x, y
 
-    data_total = np.median(data_mean, axis=1)
-    max_time = np.argmax(data_total)
-    print(f"Maximum signal at {max_time*1e9:.1f} ns")
+    plot_vs_variable(
+        sif,
+        pickle_loc,
+        plot_kwargs=default_plot_kwargs,
+        get_data_glued_kwargs=get_data_glued_kwargs,
+        data_modifier = print_max,
+        **default_kwargs
+    )
 
-    fig, ax = plt.subplots()
-    ax.plot(1e9*repeated_time_values, data_flat, 'ko', alpha=0.5)
-    ax.grid(True)
-    ax.set_xlabel('Camera delay [ns]')
-    ax.set_ylabel('Amplitude [A.U]')
-    fig.show()
