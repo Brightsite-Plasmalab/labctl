@@ -15,4 +15,6 @@ LabCTL documentation
    analysis
    experiments
    calibration
+   GUI
+   backend
    Full API <api>
