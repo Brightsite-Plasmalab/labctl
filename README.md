@@ -19,21 +19,13 @@ A simple experiment automation library for devices with serial communication.
 
 ## Graphical User Interface (GUI)
 
-The desktop GUI now lives in `src/labctl-ui` as a SvelteKit + Electron application.
+The desktop GUI lives in `src/labctl-ui-qt` as a QT application.
 
 It includes the following features:
 - Connect to serial devices
 - Write serial commands
 - Read serial output
 - Execute scripts that read & write serial communication
-
-To run it locally:
-
-```sh
-cd src/labctl-ui
-npm install
-npm run dev
-```
 
 ## Scripting syntax
 
