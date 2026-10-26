@@ -77,17 +77,3 @@ class FilteredTranslationStageExperiment(
             self, cmds, config_order_translation[i]
         )
         Raman2DExperiment.prepare_config(self, cmds, config_order_filters[i])
-
-
-if __name__ == "__main__":
-    exp = FilteredTranslationStageExperiment(
-        x=[0.0, 1.0, 2.0],
-        filters=["bp675", "bp425"],
-        n_frames=[1, 1, 1],
-        t_exposure=0.1,
-        n_iter=1,
-        camera_delay_optimum=450e-9,
-        dest_folder="/Users/martijn/Downloads/",
-        file_name="tmp",
-    )
-    print(exp.make_labctl_script().print())
